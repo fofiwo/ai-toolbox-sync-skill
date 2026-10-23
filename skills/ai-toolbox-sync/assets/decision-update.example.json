@@ -1,0 +1,16 @@
+{
+  "id": "skill:self:example-stable-id",
+  "patch": {
+    "name": "示例笔记工具",
+    "kind": "skill",
+    "ownership": "self",
+    "sourceIdentity": "self:example-project-stable-id",
+    "revision": "unknown",
+    "prompted": true,
+    "decisionEvidence": "仅示例：用户明确选择稍后，不是实际授权",
+    "state": {
+      "decision": "deferred",
+      "installation": "source-only"
+    }
+  }
+}

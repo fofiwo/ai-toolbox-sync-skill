@@ -1,0 +1,186 @@
+{
+  "schemaVersion": 1,
+  "exampleOnly": true,
+  "resources": [
+    {
+      "id": "skill:self:sample-notes",
+      "kind": "skill",
+      "ownership": "self",
+      "name": "sample-notes",
+      "contentPath": "skills/sample-notes",
+      "source": null,
+      "version": "unknown",
+      "resolvedCommit": null,
+      "license": "owner-defined",
+      "description": "整理自己的笔记工作流。",
+      "verification": "unknown",
+      "categories": [
+        "知识管理"
+      ],
+      "summary": "将零散笔记整理为结构清晰的主题摘要，便于后续查阅。",
+      "classification": {
+        "by": "ai",
+        "basis": "本条演示 description；非真实安装资料",
+        "sourceVersion": "unknown"
+      },
+      "triggerPrompt": "请使用 $sample-notes，将以下笔记整理为主题摘要：[粘贴笔记]。",
+      "state": {
+        "decision": "approved",
+        "collection": "collected",
+        "installation": "unknown",
+        "sync": "failed",
+        "catalog": "current"
+      }
+    },
+    {
+      "id": "mcp:third-party:example-docs",
+      "kind": "mcp",
+      "ownership": "third-party",
+      "name": "example-docs",
+      "projectUrl": "https://example.invalid/project",
+      "version": "unknown",
+      "install": {
+        "channel": "unknown",
+        "package": null
+      },
+      "portableConfig": {
+        "url": "https://example.invalid/mcp",
+        "bearerToken": {
+          "fromEnv": "EXAMPLE_DOCS_TOKEN"
+        }
+      },
+      "requiredEnv": [
+        "EXAMPLE_DOCS_TOKEN"
+      ],
+      "verification": "configured-only",
+      "description": "连接文档服务的示例配置。",
+      "categories": [
+        "文档检索"
+      ],
+      "summary": "演示连接文档服务并记录可迁移配置；真实检索能力尚未验证。",
+      "classification": {
+        "by": "ai",
+        "basis": "本条演示 description；非真实安装资料",
+        "sourceVersion": "unknown"
+      },
+      "state": {
+        "decision": "approved",
+        "collection": "not-collected",
+        "installation": "configured",
+        "sync": "not-requested",
+        "catalog": "current"
+      }
+    },
+    {
+      "id": "plugin:third-party:example-market/example-plugin",
+      "kind": "plugin",
+      "ownership": "third-party",
+      "name": "example-plugin",
+      "projectUrl": "https://example.invalid/plugin",
+      "pluginId": "example-plugin",
+      "version": "unknown",
+      "resolvedCommit": null,
+      "install": {
+        "channel": "source-git",
+        "target": "codex"
+      },
+      "portableConfig": {},
+      "description": "记录插件的来源与固定版本。",
+      "verification": "unknown",
+      "categories": [
+        "工具管理"
+      ],
+      "summary": "演示记录插件来源、版本与纳管信息；不代表已安装插件。",
+      "classification": {
+        "by": "ai",
+        "basis": "本条演示 description；非真实安装资料",
+        "sourceVersion": "unknown"
+      },
+      "state": {
+        "decision": "pending",
+        "collection": "not-collected",
+        "installation": "unknown",
+        "sync": "not-requested",
+        "catalog": "current"
+      }
+    },
+    {
+      "id": "skill:self:sample-image",
+      "kind": "skill",
+      "name": "sample-image",
+      "ownership": "self",
+      "version": "unknown",
+      "description": "根据产品资料与视觉要求生成图片，并检查与需求的一致性。",
+      "summary": "根据产品资料与视觉要求生成图片，并检查与需求的一致性。",
+      "categories": [
+        "生图"
+      ],
+      "triggerPrompt": "请使用 $sample-image，根据[产品资料]生成[用途]图片，要求：[比例、风格与限制]。",
+      "verification": "unknown",
+      "classification": {
+        "by": "ai",
+        "basis": "本条演示 description；非真实 Skill",
+        "sourceVersion": "unknown"
+      },
+      "state": {
+        "decision": "pending",
+        "collection": "not-collected",
+        "installation": "unknown",
+        "sync": "not-requested",
+        "catalog": "current"
+      }
+    },
+    {
+      "id": "skill:self:sample-design",
+      "kind": "skill",
+      "name": "sample-design",
+      "ownership": "self",
+      "version": "unknown",
+      "description": "设计网页界面的布局、视觉层级与响应式交互。",
+      "summary": "设计网页界面的布局、视觉层级与响应式交互。",
+      "categories": [
+        "设计"
+      ],
+      "triggerPrompt": "请使用 $sample-design，为[页面用途]设计界面，包含[主要内容与交互要求]。",
+      "verification": "unknown",
+      "classification": {
+        "by": "ai",
+        "basis": "本条演示 description；非真实 Skill",
+        "sourceVersion": "unknown"
+      },
+      "state": {
+        "decision": "pending",
+        "collection": "not-collected",
+        "installation": "unknown",
+        "sync": "not-requested",
+        "catalog": "current"
+      }
+    },
+    {
+      "id": "skill:self:sample-code",
+      "kind": "skill",
+      "name": "sample-code",
+      "ownership": "self",
+      "version": "unknown",
+      "description": "定位代码问题、实施必要修复并运行针对性测试。",
+      "summary": "定位代码问题、实施必要修复并运行针对性测试。",
+      "categories": [
+        "编程"
+      ],
+      "triggerPrompt": "请使用 $sample-code，检查[项目或文件]中的[问题现象]，完成修复并验证。",
+      "verification": "unknown",
+      "classification": {
+        "by": "ai",
+        "basis": "本条演示 description；非真实 Skill",
+        "sourceVersion": "unknown"
+      },
+      "state": {
+        "decision": "pending",
+        "collection": "not-collected",
+        "installation": "unknown",
+        "sync": "not-requested",
+        "catalog": "current"
+      }
+    }
+  ]
+}

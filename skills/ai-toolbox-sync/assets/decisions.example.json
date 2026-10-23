@@ -1,0 +1,23 @@
+{
+  "schemaVersion": 1,
+  "exampleOnly": true,
+  "records": [
+    {
+      "id": "skill:self:sample-notes",
+      "name": "sample-notes",
+      "kind": "skill",
+      "ownership": "self",
+      "sourceIdentity": "self:example-notes-project",
+      "revision": "unknown",
+      "prompted": true,
+      "decisionEvidence": "仅示例：用户选择加入，实际使用须替换为真实会话依据",
+      "state": {
+        "decision": "approved",
+        "collection": "collected",
+        "installation": "failed",
+        "sync": "failed",
+        "catalog": "current"
+      }
+    }
+  ]
+}

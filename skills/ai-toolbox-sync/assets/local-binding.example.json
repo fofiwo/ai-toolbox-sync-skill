@@ -1,0 +1,39 @@
+{
+  "schemaVersion": 1,
+  "exampleOnly": true,
+  "cli": {
+    "path": null,
+    "expectedVersion": "v0.26.1",
+    "platform": null,
+    "architecture": null,
+    "asset": null,
+    "sha256": null
+  },
+  "paths": {
+    "xdgConfigHome": null,
+    "xdgDataHome": null,
+    "xdgStateHome": null,
+    "xdgCacheHome": null,
+    "skillshareConfig": null,
+    "gitRoot": null
+  },
+  "targets": [],
+  "authorization": {
+    "status": "not-granted",
+    "repository": null,
+    "branch": null,
+    "resourceIds": [],
+    "operations": [],
+    "trigger": "manual",
+    "futureResources": "ask-to-join-named-authorized-library",
+    "evidence": null,
+    "deletion": "requires-explicit-scope"
+  },
+  "taskSync": {
+    "enabled": false,
+    "authorizationEvidence": null,
+    "remoteCacheSeconds": 86400,
+    "journalPath": null,
+    "resources": []
+  }
+}
