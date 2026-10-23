@@ -70,12 +70,43 @@ class ReleaseTests(unittest.TestCase):
                 release.main()
             self.assertEqual(command.call_count, 1)
 
+    def test_real_git_comparison(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            def run(*args):
+                return subprocess.check_output(['git', '-c', 'user.name=Fixture', '-c',
+                    'user.email=fixture@example.invalid', *args], cwd=tmp).decode().strip()
+            run('init', '-q')
+            p = Path(tmp) / 'sample.txt'
+            p.write_text('base')
+            run('add', '.'); run('commit', '-qm', 'base')
+            base = run('rev-parse', 'HEAD')
+            p.write_text('local')
+            run('commit', '-qam', 'local')
+            local = run('rev-parse', 'HEAD')
+            run('checkout', '-qb', 'other', base)
+            p.write_text('remote')
+            run('commit', '-qam', 'remote')
+            remote = run('rev-parse', 'HEAD')
+            p.write_text('staged'); run('add', '.')
+            p.write_text('unstaged')
+            (Path(tmp) / 'new.txt').write_text('new')
+            with patch.object(release, 'ROOT', Path(tmp)):
+                self.assertEqual(release.compare(base, base)['status'], 'aligned')
+                self.assertEqual(release.compare(local, base)['status'], 'local-ahead')
+                self.assertEqual(release.compare(base, remote)['status'], 'remote-ahead')
+                result = release.compare(local, remote)
+                self.assertEqual(result['status'], 'diverged')
+                for field in ['localChanges', 'remoteChanges', 'staged', 'unstaged']:
+                    self.assertIn('sample.txt', result[field])
+                self.assertIn('new.txt', result['untracked'])
+
     def test_push_uses_checked_sha_and_no_tags(self):
         head = 'a' * 40
         previous = 'b' * 40
-        replies = [(release.REMOTE + '\n').encode(), b'main\n',
+        replies = [b'main\n',
                    (previous + '\trefs/heads/main\n').encode(), previous.encode(), b'']
-        with patch.object(release, 'check', return_value=head), \
+        with patch.object(release, 'inspect', return_value={'local': head, 'status': 'local-ahead'}), \
+             patch.object(release, 'check', return_value=head), \
              patch.object(release, 'git', side_effect=replies) as command, \
              patch.object(release.sys, 'argv', ['release.py', 'push']):
             release.main()

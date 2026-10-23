@@ -66,10 +66,41 @@ def check():
     return head
 
 
+def compare(local, remote):
+    bases = git('merge-base', '--all', local, remote).decode().splitlines()
+    require(len(bases) == 1, 'No unique common ancestor; manual review required')
+    base = bases[0]
+    status = ('aligned' if local == remote else 'local-ahead' if base == remote
+              else 'remote-ahead' if base == local else 'diverged')
+    def changes(*args):
+        return git('diff', '--no-ext-diff', '--no-renames', '--name-status', *args).decode('utf-8')
+    return {'status': status, 'local': local, 'remote': remote, 'base': base,
+            'localChanges': changes(base, local), 'remoteChanges': changes(base, remote),
+            'staged': changes('--cached', local), 'unstaged': changes(),
+            'untracked': git('ls-files', '--others', '--exclude-standard').decode('utf-8'),
+            'localCommitTime': git('show', '-s', '--format=%cI', local).decode().strip(),
+            'remoteCommitTime': git('show', '-s', '--format=%cI', remote).decode().strip()}
+
+
+def inspect():
+    require(git('remote', 'get-url', '--push', '--all', 'origin').decode().splitlines() == [REMOTE], 'Wrong/multiple push targets')
+    local = git('rev-parse', 'HEAD').decode().strip()
+    # 只获取对象用于比较，不合并、不改安装文件或工作区。
+    git('fetch', '--no-tags', '--no-write-fetch-head', REMOTE, 'refs/heads/main')
+    remote = git('ls-remote', REMOTE, 'refs/heads/main').decode().split()
+    require(len(remote) == 2, 'Missing/ambiguous remote main')
+    result = compare(local, remote[0])
+    require(git('rev-parse', 'HEAD').decode().strip() == local, 'Local HEAD changed during comparison')
+    print(json.dumps(result, ensure_ascii=False, indent=2), flush=True)
+    return result
+
+
 def main():
     mode = sys.argv[1] if len(sys.argv) == 2 else ''
-    require(mode in {'manifest', 'check', 'push'}, 'Usage: python -B release.py manifest|check|push')
-    if mode == 'manifest':
+    require(mode in {'inspect', 'manifest', 'check', 'push'}, 'Usage: python -B release.py inspect|manifest|check|push')
+    if mode == 'inspect':
+        inspect()
+    elif mode == 'manifest':
         paths = git('ls-files', '--cached', '--others', '--exclude-standard', '-z').decode().split('\0')
         paths = set(filter(None, paths))
         require(paths <= allowed(), 'Unexpected working paths; content not read')
@@ -82,9 +113,11 @@ def main():
         (ROOT / 'SHA256SUMS.json').write_text(json.dumps({p: hashlib.sha256(b).hexdigest()
             for p, b in sorted(files.items()) if p != 'SHA256SUMS.json'}, indent=2) + '\n', encoding='utf-8')
     else:
+        comparison = inspect() if mode == 'push' else None
         head = check()
         if mode == 'push':
-            require(git('remote', 'get-url', '--push', '--all', 'origin').decode().splitlines() == [REMOTE], 'Wrong/multiple push targets')
+            require(comparison['local'] == head, 'Local HEAD changed; compare again')
+            require(comparison['status'] in {'aligned', 'local-ahead'}, 'Remote changes require explanation and user choice before merge')
             require(git('symbolic-ref', '--short', 'HEAD').decode().strip() == 'main', 'Publish only main')
             remote_head = git('ls-remote', REMOTE, 'refs/heads/main').decode().split()
             require(len(remote_head) == 2, 'Missing/ambiguous remote main')

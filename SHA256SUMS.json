@@ -1,11 +1,11 @@
 {
   ".gitattributes": "8b9c3028d6467ff3be7c793141927841d70f47f52d0590677438f488ca154992",
   ".gitignore": "cfe1224cd5495446f193304ac6b2d89d3ca4478f153694f6083ca7bcf6d5ba24",
-  "AGENTS.md": "bae963ff21679e6a818fbbf7db8801a407f6d06f9aeff4fb9d956c74926c4cf0",
+  "AGENTS.md": "6badcab79357582d94df8e903a18af6ae32c4c262830e9d6cce6c259e20bc134",
   "INSTALL.md": "e4de960a0f14c0c35cc34d7bd2cfbaf5df103a1d1e217c15e680b80ecfd2efc8",
-  "PUBLICATION.md": "4f60c492c1cd73e7d9d8304f09a5d1a42f3fa43cd777014d8dc07465f048f9ba",
+  "PUBLICATION.md": "05eb1a1625b1856d95f1077ed7753c4b9f05b6f4a634558d579cd36a944a2d51",
   "README.md": "4a4e7b153f46be15ff5fefd350746c258b71ea74f9ff6f07594a546bdbb844c7",
-  "release.py": "b7d62734a149f05c533ad288a66d7ce4c1635e36712149613f84c2b572bb2d61",
+  "release.py": "785b38f2aca98936c54f3b708ab0f674ba3c607aacc593be35b96c1c26b2b437",
   "skills/ai-toolbox-sync/LICENSE.skillshare": "484a676e20cc8740feacc4b8bc173273fdcd9bd1280d82065dffe8edc1363866",
   "skills/ai-toolbox-sync/SKILL.md": "6bd3551448973ff1015aebb02d9faced36c439d4e563299506e71bfd3bf00138",
   "skills/ai-toolbox-sync/UPSTREAM.json": "0806a132369da22a7ae647f1a8d73122a6d8712b2bd4fb298404f29f5e699dc2",
@@ -63,5 +63,5 @@
   "skills/ai-toolbox-sync/scripts/test_inventory.py": "23b15804707aa1e267198d3c4cb00ef3c8a7e0ecf20a3554719058a7b7f0455c",
   "skills/ai-toolbox-sync/scripts/test_inventory_dom.cjs": "be23321b3b11f297a28bec475f3519e7bee9c749140f3805639ef56046ea8747",
   "skills/ai-toolbox-sync/scripts/test_sync_integrity.py": "dc280259934f16f67e39205a6ca21a10ca810f0897de2992f2da6bfc47f93b37",
-  "test_release.py": "48db516781051754ac3901d66978efb1ab8e2696aa44223ccbf97201fe53acb9"
+  "test_release.py": "2bcb6a0c5cbfa990cfb9a6867e16bcc12b02438e0ccc148a486604ad73985f43"
 }
