@@ -23,6 +23,10 @@ Skill 路径：[skills/ai-toolbox-sync](skills/ai-toolbox-sync/SKILL.md)。安�
 
 见 [接收端验收](skills/ai-toolbox-sync/references/acceptance.md)。文件安装、宿主发现、实际触发、仓库认证、Git 读写及资源恢复分别验收。现有聊天不保证重载规则；不同账号邀请与新机器宿主加载需要接收者实际完成。
 
+## 维护与发布
+
+通用优化在此公开仓库维护，私人收藏与机器状态不进入此仓库。发布必须按 [PUBLICATION.md](PUBLICATION.md) 使用本地发布门禁；摘要清单不等于隐私审查。现有私人同步绑定不因公开发布而改变。
+
 ## 来源
 
 保留 [上游来源与摘要](skills/ai-toolbox-sync/UPSTREAM.json) 和 [Skillshare MIT 许可证](skills/ai-toolbox-sync/LICENSE.skillshare)。原样上游文档位于 references/upstream；本项目是适配版，不是上游官方发行。

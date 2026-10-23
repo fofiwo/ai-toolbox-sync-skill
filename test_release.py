@@ -1,0 +1,87 @@
+import copy
+import json
+from pathlib import Path
+import subprocess
+import tempfile
+import unittest
+from unittest.mock import patch
+import release
+
+
+class ReleaseTests(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        cls.files = release.tree(release.BASE)
+
+    def test_clean_baseline(self):
+        release.validate(self.files)
+
+    def test_private_files_rejected_even_with_updated_manifest(self):
+        for name in ['toolbox.json', 'binding.json', 'decisions.json',
+                     'task-sync-journal.json', 'skills/ai-toolbox-sync/assets/notes.json']:
+            files = dict(self.files, **{name: b'{}'})
+            with self.assertRaises(ValueError):
+                release.validate(files, manifest=False)
+
+    def test_collections_rejected(self):
+        files = copy.copy(self.files)
+        files[release.DATA] = b'window.TOOLBOX_DATA = {"exampleOnly":false,"resources":[{"id":"synthetic"}]};'
+        with self.assertRaisesRegex(ValueError, 'empty'):
+            release.validate(files, manifest=False)
+
+    def test_missing_file(self):
+        files = dict(self.files)
+        del files['skills/ai-toolbox-sync/SKILL.md']
+        with self.assertRaises(ValueError):
+            release.validate(files)
+
+    def test_tampered_file(self):
+        files = dict(self.files)
+        files['README.md'] += b'changed'
+        with self.assertRaisesRegex(ValueError, 'Manifest'):
+            release.validate(files)
+
+    def test_credential_pattern(self):
+        files = dict(self.files)
+        files['README.md'] += b'ghp_' + b'x' * 36
+        with self.assertRaisesRegex(ValueError, 'Credential'):
+            release.validate(files, manifest=False)
+
+    def test_removed_private_file_still_blocked_in_history(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            subprocess.run(['git', 'clone', '--quiet', '--no-hardlinks', str(release.ROOT), tmp], check=True)
+            def git(*args):
+                return subprocess.check_output(['git', '-c', 'user.name=Fixture', '-c',
+                    'user.email=fixture@example.invalid', *args], cwd=tmp)
+            path = Path(tmp) / 'toolbox.json'
+            path.write_text('{"synthetic":true}')
+            git('add', 'toolbox.json'); git('commit', '-qm', 'synthetic private state')
+            path.unlink()
+            git('add', '-u'); git('commit', '-qm', 'remove state')
+            with patch.object(release, 'ROOT', Path(tmp)):
+                with self.assertRaisesRegex(ValueError, 'Unexpected committed paths'):
+                    release.check()
+
+    def test_wrong_remote_never_pushes(self):
+        with patch.object(release, 'check', return_value='a' * 40), \
+             patch.object(release, 'git', return_value=b'https://example.invalid/private.git\n') as command, \
+             patch.object(release.sys, 'argv', ['release.py', 'push']):
+            with self.assertRaisesRegex(ValueError, 'push targets'):
+                release.main()
+            self.assertEqual(command.call_count, 1)
+
+    def test_push_uses_checked_sha_and_no_tags(self):
+        head = 'a' * 40
+        previous = 'b' * 40
+        replies = [(release.REMOTE + '\n').encode(), b'main\n',
+                   (previous + '\trefs/heads/main\n').encode(), previous.encode(), b'']
+        with patch.object(release, 'check', return_value=head), \
+             patch.object(release, 'git', side_effect=replies) as command, \
+             patch.object(release.sys, 'argv', ['release.py', 'push']):
+            release.main()
+            self.assertEqual(command.call_args.args, ('-c', 'push.followTags=false', '-c',
+                'remote.origin.mirror=false', 'push', release.REMOTE, head + ':refs/heads/main'))
+
+
+if __name__ == '__main__':
+    unittest.main()
