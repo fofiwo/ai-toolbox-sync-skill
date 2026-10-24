@@ -1,6 +1,6 @@
 # ai-toolbox-sync
 
-干净的个人 AI 工具箱 Skill，基于 Skillshare v0.26.1。公开分发版本：0.2.4-draft；首期支持范围为 Windows + Codex。
+独立维护的个人 AI 工具箱项目。公开分发版本：0.3.0-draft；首期支持范围为 Windows + Codex。
 
 ## 交给 AI 安装
 
@@ -17,7 +17,7 @@ Skill 路径：[skills/ai-toolbox-sync](skills/ai-toolbox-sync/SKILL.md)。安�
 
 只使用不检查；修改已纳管资源前比较差异；修改结束只提醒；用户主动同步才上传。不运行后台服务、不默认扫描全机、不自动改写全局 Agent 规则。
 
-管理器源码只在本公开库维护；私人工具箱保存用户选定的其他工具，不收藏管理器自身。收藏清单、本机绑定和生成页面位于安装目录之外，升级步骤见 [管理器维护与升级](skills/ai-toolbox-sync/references/self-maintenance.md)。本版包含离线收藏/待收藏统一工作台，活动目录与发现模板保持空白。接收者按第三方来源记录此 Skill，不继承发布者的自建身份或权限。CLI 二进制不随包提供，按引导单独核验安装。不要运行上游 run.sh。
+管理器源码只在本公开库维护；私人工具箱保存用户选定的其他工具，不收藏管理器自身。收藏清单、本机绑定和生成页面位于安装目录之外，升级步骤见 [管理器维护与升级](skills/ai-toolbox-sync/references/self-maintenance.md)。本版包含离线收藏/待收藏统一工作台，活动目录与发现模板保持空白。接收者按第三方来源记录此 Skill，不继承发布者的自建身份或权限。依赖为 Python 3.12+、原生 Git；GitHub 接入复用 gh。Git 传输、选择性文件应用和宿主注册分别执行，不安装其他工具箱管理器。
 
 ## 验证与边界
 
@@ -29,4 +29,4 @@ Skill 路径：[skills/ai-toolbox-sync](skills/ai-toolbox-sync/SKILL.md)。安�
 
 ## 来源
 
-保留 [上游来源与摘要](skills/ai-toolbox-sync/UPSTREAM.json) 和 [Skillshare MIT 许可证](skills/ai-toolbox-sync/LICENSE.skillshare)。原样上游文档位于 references/upstream；本项目是适配版，不是上游官方发行。
+本项目独立维护代码、协议、版本和发布。早期第三方材料的 [历史来源档案](skills/ai-toolbox-sync/UPSTREAM.json) 与 [历史许可](skills/ai-toolbox-sync/LICENSE.skillshare) 仅用于来源追溯；原运行依赖、安装校验资产和操作手册已退出当前分发。

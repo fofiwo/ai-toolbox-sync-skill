@@ -6,7 +6,7 @@
 
 用户说“同步”时，优先复用当前已确认的资源、仓库、分支、方向与操作范围。区分本机分发、工具箱 Git 上传/拉取、第三方官方更新和向项目源码库提交修改；这些不是同一操作。只有一个已确认绑定且范围明确时直接执行；没有绑定或多个候选时，先只读核实来源、远端清单和实际差异，再就缺失目标给具体选择，不把公开安装源自动当作上传目标。
 
-第三方安装包的本地修改仍保留原来源。用户可明确选择将改动贡献到该项目源码库，或将其他工具作为已确认的定制身份同步到指定私人库（本管理器除外）；需要核对该库中的资源身份及本机映射，不能仅凭同名就改 ownership=self 或上传第三方整包。已登记的定制版本保留其原功能和历史，先提出合并建议，有冲突按下文让用户选择。项目源码维护使用该项目既有 Git/发布检查，不为此伪造工具箱绑定或运行 Skillshare 初始化；工具箱资源同步继续遵循本文绑定、锁与完整性检查。
+第三方安装包的本地修改仍保留原来源。用户可明确选择将改动贡献到该项目源码库，或将其他工具作为已确认的定制身份同步到指定私人库（本管理器除外）；需要核对该库中的资源身份及本机映射，不能仅凭同名就改 ownership=self 或上传第三方整包。已登记的定制版本保留其原功能和历史，先提出合并建议，有冲突按下文让用户选择。项目源码维护使用该项目既有 Git/发布检查，不为此伪造工具箱绑定或初始化其他管理配置；工具箱资源同步继续遵循本文绑定、锁与完整性检查。
 
 用户本次明确要求上传已选资源，可更新此前仅恢复的操作范围，但不扩大到其他资源、仓库、公开发布或凭证。绑定定位失败须报告“未建立/未能读取绑定”及实际原因，不能把错误当作没有变化或同步成功；可继续准备可审阅差异，不静默另建绑定绕过。
 
@@ -50,9 +50,9 @@
 
 ## 本机绑定与实际目标
 
-本机 binding.taskSync 保存 enabled、授权证据、唯一 repository/branch/resourceIds、journalPath、默认 remoteCacheSeconds=86400 及 resources 映射。每个资源明确 installedPath（实际宿主目录）、sourcePath（受管源码）、runtimeExclusions（已审定精确路径）、applicationMode。CLI 的 targets 是命令真实应用范围，测试目标不能冒充宿主目录。仅安装 Skill 不自动开全局入口；每机核实授权与实际加载规则。继承已有用户授权须记录依据，缺失时只询问一次开启范围。
+本机 binding.taskSync 保存 enabled、授权证据、唯一 repository/branch/resourceIds、journalPath、默认 remoteCacheSeconds=86400 及 resources 映射。每个资源明确 installedPath（实际宿主目录）、sourcePath（受管源码）、runtimeExclusions（已审定精确路径）、applicationMode。binding 的 resources 映射是唯一文件应用范围；测试目标不能冒充宿主目录。仅安装 Skill 不自动开全局入口；每机核实授权与实际加载规则。继承已有用户授权须记录依据，缺失时只询问一次开启范围。
 
-实际安装可能是独立目录或链接，须现场核实；CLI 测试目标不等于宿主安装目录。reviewed-files 表示在既有明确授权内逐文件审核更新，不是上游 copy 模式。发现远端变化时，先展示差异并取得本次选择，未使用且scope安全才拉取受管源；实际安装仍等于可信基线时可按下节步骤应用。若资源正在使用，连受管源拉取也延后。不要自行转换用户目录为链接或降级 copy。
+实际安装可能是独立目录或链接，须现场核实；CLI 测试目标不等于宿主安装目录。reviewed-files 表示在既有明确授权内逐文件审核更新，不自动覆盖独立副本。发现远端变化时，先展示差异并取得本次选择，未使用且scope安全才拉取受管源；实际安装仍等于可信基线时可按下节步骤应用。若资源正在使用，连受管源拉取也延后。不要自行转换用户目录为链接或降级 copy。
 
 ## 整个流程的锁与证据
 
@@ -77,8 +77,8 @@ live head 与 knownTip 相同则不需 fetch；不同时 fetch 后核对真正�
 | 本机安装与受管源不同 | 有上次确认基线且 source 未变时为 installed-only；普通收尾只提醒并保留待办。用户本次明确要求收集或同步后，才审核差异、登记 collect 意图并逐文件纳入 source、验证后 resolve；仅收集不 commit/push；无基线或两边均变为 installed-drift，保留两边核对/合并，不自动覆盖 |
 | 没有改动 | 不造提交；live 且 HEAD=remoteTip 可 confirm；缓存只表示本次按旧观察继续，不宣布实时同步 |
 | 仅本地变化 | 简述本地变化，建议保留本地继续并等待选择，不自动上传；已提交未推送也算本地变化 |
-| 仅远端变化 | 简述新增/修改/删除和建议理由，用户选择采用云端后，未使用资源且全部scope安全时 intent(pull) 后调用既有 Skillshare pull，验证源与全部目标后 resolve |
-| 双方不同文件 | 修改前保留本地改动并报告需合并；不自动 commit 或 push。用户明确要求同步/合并后，审核并显式 commit，再重新观察、intent(merge) 和 CLI pull；验证后仅在本次同步请求内 push |
+| 仅远端变化 | 简述新增/修改/删除和建议理由，用户选择采用云端后，未使用资源且全部scope安全时 intent(pull) 后按 git-workflow.md 执行原生 Git 快进，再逐项审核应用并验证后 resolve |
+| 双方不同文件 | 修改前保留本地改动并报告需合并；不自动 commit 或 push。用户明确要求同步/合并后，审核并显式 commit，再重新观察、intent(merge) 和经批准的原生 Git 合并；验证后仅在本次同步请求内 push |
 | 双方同一文件/metadata/删除风险 | 保守停相关操作，保留两边；不自动 ours/theirs，不为了合并清除本地改动 |
 | 正在使用且远端有变化 | application-deferred，不热替换；结束后仍已加载旧 Skill 的会话不能声称刷新 |
 | 网络失败 | pending，独立本地任务可继续；不自动直连、不谎报同步成功 |
@@ -88,14 +88,14 @@ live head 与 knownTip 相同则不需 fetch；不同时 fetch 后核对真正�
 以下写操作只在用户明确提出本次同步时执行；持续权限、工作项 pending 或聊天结束均不能单独触发。用户指定阶段保存时同步当前获准内容，不把业务需求标记完成。
 
 1. 重新核对三层、整个 Git 根的 tracked/untracked、命令真实scope及授权。仅选定资源和获准管理文件可上传；新资源未加入指定库不进入；没有变化不 commit。
-2. **先显式使用 Skillshare commit 提交审核通过的修改，再重读 HEAD**。push 会隐式 commit，故登记 intent 前必须确认工作区干净并固定真正待推 SHA；不允许登记旧 HEAD 后让 push 隐式加入新文件。任务期间新增变化使检查失效。
-3. endPush=true 实时探测/必要 fetch，重新核对双方差异。仅本地变化时 observe → intent(action=push, head=真实HEAD) → 原版 CLI push（不强推）；前后核对工作区与远端。push 没有 --pull 不隐式分发，不顺便安装第三方新版本。
+2. **先精确暂存获准文件并用原生 git commit 提交，再重读 HEAD**。暂存区不能包含其他变化；Git push 不会隐式 commit。登记 intent 前确认工作区干净并固定真正待推 SHA，不把后续新文件混入本次事务。任务期间新增变化使检查失效。
+3. endPush=true 实时探测/必要 fetch，重新核对双方差异。仅本地变化时 observe → intent(action=push, head=真实HEAD) → 按 git-workflow.md 将固定 SHA 原生 Git push（不强推）；前后核对工作区与远端。Git push 不隐式分发，不顺便安装第三方新版本。
 4. CLI 失败或输出不确定时保留 pending，不能按“失败”盲重发。下次先确认原命令已结束、实际 HEAD/工作区及真实远端：远端恰为 intent.head 且三层已核实可 resolve；远端仍是原 tip、本地仍是待推 HEAD 且无入站变化，可传 previousCommandFinished=true resolve，恢复 local-only 后重新检查再登记新 intent。远端前进到其它提交时保守保留 pending，人工核对 ancestry/差异，不将远端不同当作未推送。merge/pull 后本地尚需 push 时保持日志待处理，不能假报完成。
 5. resolve 只在实际同步结果核实后确认；独立轴更新使用 record_decision.py。同步失败不撤销收藏/安装成功；目录刷新失败独立记录。confirmedKey 按稳定身份+内容摘要+远端观察去重；拉取后的相同 HEAD/内容不再制造上传提交。释放流程锁不删除未完日志。
 
 本辅助不会执行或保证 scopeReviewed 的真实性，不提供外部写者排他、远端事务或跨机器锁。拉取/合并的本地提交领先远端须如实保留待同步状态，等待用户主动同步；无法安全自动处理时保留 pending 并报告，不伪称已完成。
 
-首次只在安装/受管源实际内容一致、提交覆盖核验通过且真实远端核对通过后 confirm 建立 baseline，不能虚构历史。installed-only 纳入前备份、复核原 source 摘要未变；只处理用户授权的具体文件，删除仍需单独范围许可，运行产物不纳入。此授权纳入不是上游 copy 分发。collect/merge 完成转 local-only 须 previousCommandFinished=true、applicationVerified=true：实查工作区无冲突/MERGE_HEAD、原远端 tip 已为本地祖先（merge-base --is-ancestor）、源/目标内容符合预期，再重新观察登记 push，不把 merge 本身当已推送。
+首次只在安装/受管源实际内容一致、提交覆盖核验通过且真实远端核对通过后 confirm 建立 baseline，不能虚构历史。installed-only 纳入前备份、复核原 source 摘要未变；只处理用户授权的具体文件，删除仍需单独范围许可，运行产物不纳入。此授权纳入仅限所选文件，不是目录镜像。collect/merge 完成转 local-only 须 previousCommandFinished=true、applicationVerified=true：实查工作区无冲突/MERGE_HEAD、原远端 tip 已为本地祖先（merge-base --is-ancestor）、源/目标内容符合预期，再重新观察登记 push，不把 merge 本身当已推送。
 
 跨聊天无法证明资源无人使用时保守延后应用，不新增租约/监听服务。快速缓存不能生成新的 confirmed/synced；observe 不接受缓存或失败 probe 冒充 live。
 
@@ -103,17 +103,17 @@ live head 与 knownTip 相同则不需 fetch；不同时 fetch 后核对真正�
 
 ## 独立宿主目录的审核应用
 
-source-only 仅在安装摘要仍等于该资源上次可信基线、而受管源改变时产生；正在使用则 application-deferred。applicationMode=reviewed-files 且已有本机目标授权、用户已选择本次差异处理方案时：核对远端来源/提交，列出 source 对 baseline 的逐文件差异，确认不含未经授权删除、敏感文件、未知新增资源或链接逃逸；先备份整个已批准资源（排除机器生成内容），再次核对 installedDigest 与基线一致，再 intent(apply,head=当前HEAD)。将审核过的新/改业务文件逐个原子替换到明确安装目录，保留 catalog/data.js 与已批准运行产物；每次替换前确认该文件仍与刚备份版本一致。来源或安装内容再次变化、操作失败则停止后续替换，保留备份/pending，不把部分应用当成功。
+source-only 仅在安装摘要仍等于该资源上次可信基线、而受管源改变时产生；正在使用则 application-deferred。applicationMode=reviewed-files 且已有本机目标授权、用户已选择本次差异处理方案时：核对远端来源/提交，按 [本项目文件执行器](git-workflow.md#本项目文件执行器) 生成源到安装目录的只读计划，审查新增/修改/删除、敏感文件、身份与链接。再次核对 installedDigest 与基线一致，再 intent(apply,head=当前HEAD)，应用批准计划；执行器只备份将被替换或删除的原文件，保留审定排除项及本机运行产物。来源或安装内容再次变化、操作失败则停止后续替换，保留备份、回执及 pending，不把部分应用当成功。
 
-完成后核对全资源摘要、预期逐文件结果及当前宿主使用状态，previousCommandFinished=true/applicationVerified=true resolve 才更新基线。这是有备份和逐项核对的 AI 执行流程，不是目录级事务，也不能防住不合作外部写者；不悄悄改目录为 junction，不调用上游 copy。无可信基线先报告并核实建立，不能用当前远端内容伪造过去基线。与源同时发生本地编辑时停止自动应用并保留两边。
+完成后核对全资源摘要、预期逐文件结果及当前宿主使用状态，previousCommandFinished=true/applicationVerified=true resolve 才更新基线。这是有备份和逐项核对的 AI 执行流程，不是目录级事务，也不能防住不合作外部写者；不悄悄改目录为 junction，不执行目录镜像覆盖。无可信基线先报告并核实建立，不能用当前远端内容伪造过去基线。与源同时发生本地编辑时停止自动应用并保留两边。
 
-已有 pull 意图覆盖受管源拉取与获准的独立宿主应用，不另开 apply 意图。CLI pull 完成后真实核对 HEAD=远端原检查 tip、无工作区/入站差异、宿主仍等于基线且非在用，调用 application（含 observation、previousCommandFinished=true）转 application-ready；按上述逐文件备份审核流程应用，再 resolve。失败/在用/漂移保留原 pull pending，不以删除日志绕过；无现有 pull 意图的独立 source-only 更新才登记 apply 意图。
+已有 pull 意图覆盖受管源拉取与获准的独立宿主应用，不另开 apply 意图。Git 快进或合并完成后真实核对 HEAD=远端原检查 tip、无工作区/入站差异、宿主仍等于基线且非在用，调用 application（含 observation、previousCommandFinished=true）转 application-ready；按上述逐文件备份审核流程应用，再 resolve。失败/在用/漂移保留原 pull pending，不以删除日志绕过；无现有 pull 意图的独立 source-only 更新才登记 apply 意图。
 
 缓存按成功观察时刻起滚动 24 小时，不是每天零点刷新；旧缓存沿用原 checkedAt/cache_expire_at，不追溯延长，下一次真实查询成功才写入新的 86400 秒 TTL。
 
 ## 第三方资源边界
 
-源码同步仅允许权威清单 ownership=self 的已授权资源。开始/收尾均核对 taskSync.resourceIds、实际 source 内容、CLI 全部目标及待提交路径；第三方或归属未知资源混入时停止相关同步，不靠网页过滤代替执行检查。第三方 Skill/MCP/插件只登记安装来源与提示词，实际版本/安装状态留在库外；不 collect 或复制其目录。第三方最新版检查与更新独立走 [更新流程](third-party-updates.md)。授权只来自当前用户对具体仓库、分支、资源和操作的明确选择；不继承发布者的授权。
+源码同步仅允许权威清单 ownership=self 的已授权资源。开始/收尾均核对 taskSync.resourceIds、实际 source 内容、本次全部明确目标及待提交路径；第三方或归属未知资源混入时停止相关同步，不靠网页过滤代替执行检查。第三方 Skill/MCP/插件只登记安装来源与提示词，实际版本/安装状态留在库外；不 collect 或复制其目录。第三方最新版检查与更新独立走 [更新流程](third-party-updates.md)。授权只来自当前用户对具体仓库、分支、资源和操作的明确选择；不继承发布者的授权。
 
 
 ## 必须执行的完整性与新鲜度校验
@@ -140,7 +140,7 @@ source-only 仅在安装摘要仍等于该资源上次可信基线、而受管�
 
 ## 整份 Agent 文档资源
 
-`kind=agent-document` 的身份、来源与精确目标规则见 [Agent 文档](agent-documents.md)。它不使用 Skill 的目录指纹、collect 或 agent 批量分发；使用专用全文摘要、独立文档绑定和 `agent_documents.py`。共享快照置于 `agent-documents/<documentId>.json`，不得放入 Skillshare 的 agents 来源目录或 targets。现有“仅自建源码同步”限制针对 Skill/MCP/插件，不禁止已获准的文档派生版本；派生来源仍须保留。
+`kind=agent-document` 的身份、来源与精确目标规则见 [Agent 文档](agent-documents.md)。它不使用 Skill 的目录指纹、collect 或 agent 批量分发；使用专用全文摘要、独立文档绑定和 `agent_documents.py`。共享快照置于 `agent-documents/<documentId>.json`，不作为 Skill/MCP 批量分发，也不广播到其他宿主。现有“仅自建源码同步”限制针对 Skill/MCP/插件，不禁止已获准的文档派生版本；派生来源仍须保留。
 
 复用本页的仓库锁、远端检查、任务触发、提交/推送和 pending 流程。文档 `inspect` 返回的 installedDigest/sourceDigest 用于原 sync_session observation，bundleDigest 另作完整快照前置条件。全文已加载时可 collect 已授权本地修改，但入站 apply 延后；不能宣称当前会话重新加载了文档。导入新电脑默认派生新 documentId 与 installationId，不能复制旧机器的绑定。
 

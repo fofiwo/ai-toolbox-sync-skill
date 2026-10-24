@@ -51,6 +51,10 @@ class WorkspaceTests(unittest.TestCase):
         self.assertNotIn('</script>', private)
         self.assertIn('\\u003c/script', private)
         import re
+        skill = Path(__file__).resolve().parent.parent
+        version = re.search(r'^  version:\s*(\S+)', (skill / 'SKILL.md').read_text(encoding='utf-8'), re.M).group(1)
+        self.assertIn('个人 AI 工具箱 / ' + version,
+                      (output / 'index.html').read_text(encoding='utf-8'))
         for name in re.findall(r'(?:src|href)="([^"#]+)"', (output / 'index.html').read_text(encoding='utf-8')):
             self.assertTrue((output / name).is_file(), name)
         before = (output / 'discovery-data.js').read_bytes()

@@ -2,12 +2,12 @@
 
 管理器自身先走 [管理器维护与升级](self-maintenance.md)：ai-toolbox-sync 不加入私人收藏或 taskSync 资源绑定；其干净源码只发布到公开源码库。普通资源规则不改变这个分流。
 
-清单示例在 ../assets/toolbox.example.json，只是工具箱数据，不是 Skillshare 可直接加载的配置。示例不授权安装或上传。没有通用清单执行器；由 AI 对照清单使用现有 CLI，一次处理已批准的条目。
+清单示例在 ../assets/toolbox.example.json，是本项目自己的工具箱数据契约。示例不授权安装或上传。由 AI 对照清单使用本项目脚本、原生 Git 与资源官方安装器，一次处理已批准的条目；没有自动全量执行器。
 
 ## 纳管
 
 - 先显示资源名称、类型、来源和准备保存的内容，得到加入决定后再复制/登记。只在授权的目录内枚举；不读取 .env*、凭证和完整敏感配置。
-- 自建 Skill：逐个指定本地目录安装或原样纳入独立 source，不使用 collect --all。读 upstream/install.md；install --json 可能允许覆盖，不把它当作纯输出选项。目的目录已存在就先比较，不能自动覆盖。
+- 自建 Skill：按 [原生 Git 工作流](git-workflow.md) 逐文件审核后纳入独立 source 或安装到已选宿主；不批量扫描或分发。目的目录已存在就先比较，不能自动覆盖。
 - 自建 Skill 保留 SKILL.md、脚本、references、assets、许可证及来源版本；检查引用在快照内能解析。外链目录不得静默跟随进仓库；缺少资源应报告，不能称完整。
 - 第三方 Skill/MCP/plugin：只记录原始项目/安装地址、安装提示词、来源身份、版本资料和运行时前提，不复制源码、安装包、缓存或配置进入同步目录；安装状态和真实版本留在库外。插件市场名称不是跨机可重建来源的充分证据；未确认时标 unknown，不编造 URL。
 - 自建 MCP/plugin：保存所选完整源码和依赖锁定信息；不纳入 node_modules、venv、缓存、密钥和机器数据。构建包可选，默认不生成。
@@ -17,11 +17,11 @@
 
 共享仓库建议保存 toolbox.json、skills/<name>/、必要的 mcp.yaml、owned/mcp/、owned/plugins/ 和许可文件。受管范围必须逐项列出，不以“整个用户目录”或单纯扩展名作为白名单。
 
-本机配置、待处理决定、安装/同步/目录状态、缓存、备份与实际路径在仓库外；ownership 是资源归属说明，不是权限证明。git_root: root 可容纳不同资源，但本机 config.yaml 留在忽略范围，并核对所有待上传历史；这不是共享机器配置的许可。
+本机配置、待处理决定、安装/同步/目录状态、缓存、备份与实际路径在仓库外；ownership 是资源归属说明，不是权限证明。paths.gitRoot 指向经核实的真实 Git 根；所有本机状态留在库外，并核对全部待上传历史，忽略规则不代表历史没有敏感内容。
 
 已有仓库同步授权记入仓库外本机绑定，具体字段及新资源询问规则见 [新增后询问](after-change.md)。仅在用户主动要求本次同步时，按已经确认的库、分支、资源和操作执行，不反复询问同范围上传；持续权限不是自动上传触发器；新增资源只有在用户明确选择加入相应同步库后才进入该范围。
 
-可直接迁移的 MCP 定义使用 fromEnv 引用，不存值。需要机器路径时由 AI 依据本机已批准绑定生成本地定义，sources.mcp 指向该文件；共享清单保持逻辑路径名称。不要把未实现的占位符传给 CLI 并声称它会自动替换。
+可直接迁移的 MCP 定义使用 fromEnv 引用，不存值。需要机器路径时由 AI 依据本机已批准绑定生成供对应宿主官方接口使用的本地定义；共享清单保持逻辑路径名称。不要把未实现的占位符传给 CLI 并声称它会自动替换。
 
 第三方资源不参加源码同步。换机安装先核对官方最新稳定版本；已安装资源按 [第三方更新](third-party-updates.md) 实际检查并在授权内更新。未知版本不等于过期或最新；本地定制不自动覆盖。只有自建资源可进入 taskSync 资源绑定与源码分发范围。第三方安装索引可以随已授权清单保存，但这不是复制或同步第三方资源本体。
 
@@ -34,6 +34,6 @@
 
 ## 整份 Agent 文档资源
 
-`kind=agent-document` 的身份、来源与精确目标规则见 [Agent 文档](agent-documents.md)。它不使用 Skill 的目录指纹、collect 或 agent 批量分发；使用专用全文摘要、独立文档绑定和 `agent_documents.py`。共享快照置于 `agent-documents/<documentId>.json`，不得放入 Skillshare 的 agents 来源目录或 targets。现有“仅自建源码同步”限制针对 Skill/MCP/插件，不禁止已获准的文档派生版本；派生来源仍须保留。
+`kind=agent-document` 的身份、来源与精确目标规则见 [Agent 文档](agent-documents.md)。它不使用 Skill 的目录指纹、collect 或 agent 批量分发；使用专用全文摘要、独立文档绑定和 `agent_documents.py`。共享快照置于 `agent-documents/<documentId>.json`，不作为 Skill/MCP 批量分发，也不广播到其他宿主。现有“仅自建源码同步”限制针对 Skill/MCP/插件，不禁止已获准的文档派生版本；派生来源仍须保留。
 
 复用本页的仓库锁、远端检查、任务触发、提交/推送和 pending 流程。文档 `inspect` 返回的 installedDigest/sourceDigest 用于原 sync_session observation，bundleDigest 另作完整快照前置条件。全文已加载时可 collect 已授权本地修改，但入站 apply 延后；不能宣称当前会话重新加载了文档。导入新电脑默认派生新 documentId 与 installationId，不能复制旧机器的绑定。

@@ -35,6 +35,22 @@ class ReleaseTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             release.validate(files)
 
+    def test_independent_distribution_retires_only_exact_dependency_files(self):
+        files = {p: b for p, b in self.files.items() if p not in release.RETIRED}
+        files['skills/ai-toolbox-sync/references/git-workflow.md'] = b'# native git'
+        files['skills/ai-toolbox-sync/scripts/test_native_git.py'] = b'# fixture'
+        release.validate(files, manifest=False)
+        files.pop('skills/ai-toolbox-sync/UPSTREAM.json')
+        with self.assertRaisesRegex(ValueError, 'Required distribution'):
+            release.validate(files, manifest=False)
+
+    def test_independent_distribution_rejects_dependency_reintroduction(self):
+        files = dict(self.files)
+        files['skills/ai-toolbox-sync/references/git-workflow.md'] = b'# native git'
+        files['skills/ai-toolbox-sync/scripts/test_native_git.py'] = b'# fixture'
+        with self.assertRaisesRegex(ValueError, 'Retired dependency'):
+            release.validate(files, manifest=False)
+
     def test_machine_discovery_rejected(self):
         files = dict(self.files)
         files[release.DISCOVERY] = b'window.TOOLBOX_DISCOVERY = null;'

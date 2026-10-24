@@ -1,23 +1,9 @@
 {
   "schemaVersion": 1,
   "exampleOnly": true,
-  "cli": {
-    "path": null,
-    "expectedVersion": "v0.26.1",
-    "platform": null,
-    "architecture": null,
-    "asset": null,
-    "sha256": null
-  },
   "paths": {
-    "xdgConfigHome": null,
-    "xdgDataHome": null,
-    "xdgStateHome": null,
-    "xdgCacheHome": null,
-    "skillshareConfig": null,
     "gitRoot": null
   },
-  "targets": [],
   "authorization": {
     "status": "not-granted",
     "repository": null,
@@ -35,5 +21,10 @@
     "remoteCacheSeconds": 86400,
     "journalPath": null,
     "resources": []
+  },
+  "runtime": {
+    "pythonPath": null,
+    "gitPath": null,
+    "githubCliPath": null
   }
 }

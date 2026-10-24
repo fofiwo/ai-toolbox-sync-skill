@@ -1,4 +1,4 @@
-"""Whole-document snapshots and exact local bindings. Git transport stays with Skillshare."""
+"""Whole-document snapshots and exact local bindings. Git transport uses native Git."""
 import argparse
 import copy
 from datetime import datetime, timezone

@@ -17,7 +17,35 @@ EXTRA = {'release.py', 'test_release.py', 'AGENTS.md', 'PUBLICATION.md',
          'skills/ai-toolbox-sync/scripts/build_workspace.py',
          'skills/ai-toolbox-sync/scripts/test_workspace.py',
          'skills/ai-toolbox-sync/scripts/test_workspace.cjs',
-         'skills/ai-toolbox-sync/references/self-maintenance.md'}
+         'skills/ai-toolbox-sync/references/self-maintenance.md',
+         'skills/ai-toolbox-sync/references/git-workflow.md',
+         'skills/ai-toolbox-sync/scripts/test_native_git.py',
+         'skills/ai-toolbox-sync/scripts/resource_files.py',
+         'skills/ai-toolbox-sync/scripts/test_resource_files.py',
+         'skills/ai-toolbox-sync/scripts/test_resource_migration.py'}
+
+
+# Exact historical dependency files retired from the independent distribution.
+# Still allowed for validating old commits; no other baseline file is optional.
+RETIRED = {
+    'skills/ai-toolbox-sync/assets/skillshare-v0.26.1-checksums.txt',
+    'skills/ai-toolbox-sync/references/upstream/TROUBLESHOOTING.md',
+    'skills/ai-toolbox-sync/references/upstream/audit.md',
+    'skills/ai-toolbox-sync/references/upstream/backup.md',
+    'skills/ai-toolbox-sync/references/upstream/extras.md',
+    'skills/ai-toolbox-sync/references/upstream/hooks.md',
+    'skills/ai-toolbox-sync/references/upstream/init.md',
+    'skills/ai-toolbox-sync/references/upstream/install.md',
+    'skills/ai-toolbox-sync/references/upstream/log.md',
+    'skills/ai-toolbox-sync/references/upstream/mcp.md',
+    'skills/ai-toolbox-sync/references/upstream/memory-review.md',
+    'skills/ai-toolbox-sync/references/upstream/native-agents.md',
+    'skills/ai-toolbox-sync/references/upstream/plugins.md',
+    'skills/ai-toolbox-sync/references/upstream/status.md',
+    'skills/ai-toolbox-sync/references/upstream/sync.md',
+    'skills/ai-toolbox-sync/references/upstream/targets.md',
+    'skills/ai-toolbox-sync/references/upstream/trash.md',
+}
 
 
 def git(*args):
@@ -36,8 +64,12 @@ def allowed():
 
 def validate(files, manifest=True):
     require(set(files) <= allowed(), 'Unexpected public paths; review the explicit allowlist')
-    required = allowed() - EXTRA - {'SHA256SUMS.json'}
+    required = allowed() - EXTRA - RETIRED - {'SHA256SUMS.json'}
     require(required <= set(files), 'Required distribution file missing')
+    if 'skills/ai-toolbox-sync/references/git-workflow.md' in files:
+        require(not (RETIRED & set(files)), 'Retired dependency files in independent distribution')
+        require('skills/ai-toolbox-sync/scripts/test_native_git.py' in files,
+                'Independent Git workflow validation missing')
     raw = files[DATA].decode('utf-8').strip()
     require(raw.startswith('window.TOOLBOX_DATA ='), 'Invalid catalog assignment')
     require(json.loads(raw.split('=', 1)[1].rstrip(';')) ==
@@ -121,6 +153,8 @@ def main():
         for p in paths:
             target = ROOT / p
             require(not any(x.is_symlink() or x.is_junction() for x in [target, *target.parents] if x != ROOT.parent), 'Linked path forbidden')
+            if not target.exists() and p in RETIRED:
+                continue
             files[p] = target.read_bytes()
         validate(files, manifest=False)
         (ROOT / 'SHA256SUMS.json').write_text(json.dumps({p: hashlib.sha256(b).hexdigest()

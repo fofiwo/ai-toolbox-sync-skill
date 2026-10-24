@@ -4,7 +4,7 @@
 
 ## 1. 先检查，只询问必要决定
 
-复用本会话已确认的选择和授权。先按 bootstrap.md 检查系统、架构、宿主、Python、Git、GitHub CLI、固定版本 Skillshare 和本机定位指针；只检查已知安装位置。依赖缺失在配置授权内由 AI 从官方来源安装并验证；需要管理员或登录操作时只交接该步骤。Python 是本 Skill 辅助脚本的必要运行时，不把 Skillshare 可执行等同于全部依赖齐备。
+复用本会话已确认的选择和授权。先按 bootstrap.md 检查系统、架构、宿主、Python 3.12+、Git、GitHub CLI 和本机定位指针；只检查已知安装位置。依赖缺失在配置授权内由 AI 从官方来源安装并验证；需要管理员或登录操作时只交接该步骤。Python 与 Git 是独立项目的运行依赖；按原生 Git 工作流执行，不依赖其他工具箱管理器。
 
 没有仓库时，集中给出具体方案，而不是让用户自行查参数：
 
@@ -28,15 +28,7 @@
 
 建库和本机初始化阶段写库外的 `bootstrap-progress.json`，仅记录授权依据、账号/仓库名、路径、阶段、预期提交与实际核验结果；不保存设备码、Token 或凭证。恢复时先核对实际远端、目录及上次命令是否已结束，不凭记录断言操作成功。
 
-按 safe-sync.md 在子进程中同时设置 XDG_CONFIG_HOME、XDG_DATA_HOME、XDG_STATE_HOME、XDG_CACHE_HOME 和 SKILLSHARE_CONFIG；先于任何 Skillshare 调用设置，避免帮助或版本检查使用默认缓存。不要改 HOME、CODEX_HOME、全局 Git 配置或系统代理。
-
-核实固定 CLI 的帮助及 [init 参数](upstream/init.md)，在新空目录执行显式全局初始化：
-
-```text
-skillshare init -g --no-copy --no-targets --no-skill --git --git-root root
-```
-
-先用同参数的 `--dry-run` 审查，再执行并核对实际 Git 根、配置和 targets 为空。禁止裸 `init`：其非交互默认行为可能导入现有资源、发现全部目标并同步。不要用 `init --remote` 接管旧目录。
+按 [原生 Git 工作流](git-workflow.md)，核实已安装 Git 的参数能力，在本次批准的全新空目录执行 `git init --initial-branch=<已确认分支> <全新目录>`。实际 Git 根必须与批准目录一致；不自动导入、发现资源或注册宿主。不要改 HOME、CODEX_HOME、全局 Git 配置或系统代理，不初始化/接管已有目录。
 
 由 AI 创建实际清单 `toolbox.json`，初始为 `{"schemaVersion":1,"resources":[]}`；不复制示例资源、exampleOnly 标记或开发者授权。可创建说明文件与必要忽略规则，确认机器配置、缓存、绑定、日志和备份不进入 Git。使用已核实远端设置 origin；存在不同 origin 就停下核对，不覆盖。分支按已确认选择建立，不假定远端已有 main。
 
@@ -44,11 +36,11 @@ skillshare init -g --no-copy --no-targets --no-skill --git --git-root root
 
 空库没有共同祖先，不能伪造 remoteTip 或正常同步 baseline。本节只适用于本流程明确获准新建、Git 查询成功且确认没有任何 refs 的远端，以及由本流程创建的本地仓库。远端已有任意 refs、来源不明或本机已有未知提交时转已有仓库审查；不以“首次配置”绕过 safe-sync.md。
 
-建立库外 binding（参考 ../assets/local-binding.example.json），填真实 CLI、XDG、gitRoot、远端、分支、授权与 journal；资源列表先为空。本次获准同步需启用工作流辅助 taskSync.enabled=true，authorization.trigger 在用户仅选择手动时保持 manual，授权证据只记本次初始化范围；这不授权写宿主规则或后续自动任务触发。不启用同步辅助时不可调用 begin，应明确同步配置尚未完成。按 task-sync.md 的 begin 获取仓库锁，范围变化前 release 后重新 begin；未取得锁不得提交或推送。
+建立库外 binding（参考 ../assets/local-binding.example.json），填真实 Python/Git/gh 路径、gitRoot、远端、分支、授权与 journal；资源列表先为空。本次获准同步需启用工作流辅助 taskSync.enabled=true，authorization.trigger 在用户仅选择手动时保持 manual，授权证据只记本次初始化范围；这不授权写宿主规则或后续自动任务触发。不启用同步辅助时不可调用 begin，应明确同步配置尚未完成。按 task-sync.md 的 begin 获取仓库锁，范围变化前 release 后重新 begin；未取得锁不得提交或推送。
 
-审核整个暂存区、工作区及全部待发送历史，只允许空清单、必要说明和已审核管理文件；配置不应因忽略规则遗漏而入库。首次提交前核实 Git 作者信息，缺失时只问必要署名并限定本仓库配置，不猜邮箱或修改全局身份。按固定 CLI 帮助使用显式 `skillshare commit -g`，记录真实 HEAD 和提交树；这是真实初始化内容，不是无意义测试提交。
+审核整个暂存区、工作区及全部待发送历史，只允许空清单、必要说明和已审核管理文件；配置不应因忽略规则遗漏而入库。首次提交前核实 Git 作者信息，缺失时只问必要署名并限定本仓库配置，不猜邮箱或修改全局身份。按 git-workflow.md 精确暂存已审查文件，用 `git commit -m <说明>` 提交，记录真实 HEAD 和提交树；这是真实初始化内容，不是无意义测试提交。
 
-推送前再次成功查询实际远端所有 refs，仍为空才继续；在库外阶段记录中保存拟推提交、分支和未完成状态。使用 `skillshare push -g`（不带 --pull、不强推），不调用要求既有远端 SHA 的普通 push intent 来伪造空库基线。此首次事务由流程锁和 bootstrap 阶段记录覆盖，不冒称 sync_session 已自动覆盖无 HEAD 的远端。
+推送前再次成功查询实际远端所有 refs，仍为空才继续；在库外阶段记录中保存拟推提交、分支和未完成状态。使用 git-workflow.md 的原生 `git push` 将固定 SHA 上传至已确认分支（不强推、不附带其他 refs），不调用要求既有远端 SHA 的普通 push intent 来伪造空库基线。此首次事务由流程锁和 bootstrap 阶段记录覆盖，不冒称 sync_session 已自动覆盖无 HEAD 的远端。
 
 返回后重新核对指定远端分支 SHA、实际提交内容和工作区，只有预期提交已存在才记录首次上传成功。若推送结果不确定，先只读检查确切远端 SHA；相等则核验并继续，不相等或有其他提交则保留现场审查，不盲重推。始终释放自己的锁，保留未完成阶段记录。
 

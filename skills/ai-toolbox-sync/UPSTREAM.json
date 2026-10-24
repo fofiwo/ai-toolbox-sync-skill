@@ -3,7 +3,7 @@
   "tag": "v0.26.1",
   "commit": "02d8dfffa08fe765a4e6f207a0ac9d45ee4150bf",
   "license": "MIT; Copyright (c) 2025 runkids",
-  "adaptation": "SKILL.md replaced with personal-toolbox entrypoint; references copied byte-for-byte under references/upstream; run.sh archived only and not shipped in draft; no CLI source modified",
+  "adaptation": "Independent project since 0.3.0-draft. Historical CLI dependency, copied reference manuals and binary checksum asset removed. Native Git and project-owned Python helpers implement the current workflow. Historical source digests and original MIT notice retained for attribution; listed files are historical records, not current package contents.",
   "files": [
     {
       "path": "LICENSE",
@@ -81,5 +81,6 @@
       "path": "skills/skillshare/SKILL.md",
       "sha256": "7a854cb1374bedd819ca71b60a5305126befbd5ac0520661d925bfd680781820"
     }
-  ]
+  ],
+  "role": "Historical provenance only; not a runtime dependency, product affiliation or current install source"
 }

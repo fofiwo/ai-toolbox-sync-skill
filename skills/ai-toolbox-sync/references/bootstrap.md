@@ -1,6 +1,6 @@
 # 私人仓库接入与新电脑引导
 
-先检查，再下载。本文是按授权执行的引导，不是自动安装器；不运行上游 run.sh，不自动改 PATH、升级旧安装或覆盖同名目录。
+先检查，再下载。本文是按授权执行的引导，不是自动安装器；不自动改 PATH、升级旧安装或覆盖同名目录。
 
 ## 0. 私有库接入：先明确身份，再处理当前阻塞
 
@@ -49,11 +49,11 @@
 
 以下操作按上面的状态分支选用；已满足完成标准的步骤直接跳过。
 
-1. 检查 OS、架构、宿主与本机绑定、Git、GitHub CLI、Skillshare。已存在则复用；需要安装时，当前请求明确涵盖安装即可在新目录使用官方来源完成，遵循下文固定版本和校验要求。缺安装权限或需要系统管理员确认时只暂停该步骤，不让用户手动执行本可由 AI 完成的一串命令。
+1. 检查 OS、架构、宿主与本机绑定、Python 3.12+、Git、GitHub CLI。已存在则复用；需要安装时，当前请求明确涵盖安装即可在新目录使用官方来源完成，遵循下文固定版本和校验要求。缺安装权限或需要系统管理员确认时只暂停该步骤，不让用户手动执行本可由 AI 完成的一串命令。
 2. 使用不输出凭证的方式核实账号，例如 `gh api user --jq .login`；使用 `gh repo view OWNER/REPO --json nameWithOwner,visibility,viewerPermission` 验证目标库。禁止 `gh auth token`、读取凭证文件或索要密码/Token/私钥。仓库 404 可能是无权限或地址错误，不直接声称仓库不存在；网络失败不当作未登录。
 3. 已知需要邀请或接受邀请时，先执行上面的对应分支，仅暂停依赖它的工作；不是等完成 CLI 和 Git 检查后才指导邀请。需要邀请的不同账号须先通过邀请与接受流程的完成标准，再继续清单读取。
 4. 按状态表确需认证时，AI 在允许的交互终端中启动 `gh auth login --hostname github.com --git-protocol https --web`，使用用户指定的浏览器打开官方设备授权页，明确“本次授权给接收账号 RECIPIENT 的本机 GitHub CLI”。AI 完成本次设备码填写及授权范围已明确的普通页面确认；用户只处理登录凭证、验证码、双因素认证、宿主强制确认或明确保留的批准。页面要求额外范围时先说明，不顺带增加权限。若宿主要求用户输入设备码，则在本地交互界面交接，不要求复制进聊天。设备码只在本次进程内短时传递或本地交互界面使用，不保存到文件、聊天记录或共享库；剪贴板须确认为本次进程刚生成的码，不能假定旧剪贴板仍有效。无交互终端时只给这一个必要命令及操作说明。完成后重新验证 CLI 实际账号和仓库；授权未结束或已过期时先检查旧进程，不并发启动多个授权，不因网页已登录而报告 CLI 已认证。
-5. 验证 Git 与 GitHub CLI 的认证链路：`gh api` 成功不等于 `git clone/pull/push` 能认证。先使用目标仓库的 `git ls-remote` 验证 Git 读取；不得将 Token 拼进 URL、命令或配置。若 Git 缺凭证衔接，在本次 Git/Skillshare 子进程中用 `GIT_CONFIG_COUNT`、`GIT_CONFIG_KEY_n`、`GIT_CONFIG_VALUE_n` 配置 `credential.https://github.com.helper`，值为调用已核实 GitHub CLI 绝对路径的 `!"<gh绝对路径>" auth git-credential`（按当前平台正确引用）。保留已有进程级 Git 配置项，环境仅限本次目标仓库命令；不自动执行会写全局配置的 `gh auth setup-git`。认证失败区分网络、账号、仓库权限与 helper 路径，修正后再次验证，不重复要求用户登录。
+5. 验证 Git 与 GitHub CLI 的认证链路：`gh api` 成功不等于 `git clone/pull/push` 能认证。先使用目标仓库的 `git ls-remote` 验证 Git 读取；不得将 Token 拼进 URL、命令或配置。若 Git 缺凭证衔接，在本次 Git 子进程中用 `GIT_CONFIG_COUNT`、`GIT_CONFIG_KEY_n`、`GIT_CONFIG_VALUE_n` 配置 `credential.https://github.com.helper`，值为调用已核实 GitHub CLI 绝对路径的 `!"<gh绝对路径>" auth git-credential`（按当前平台正确引用）。保留已有进程级 Git 配置项，环境仅限本次目标仓库命令；不自动执行会写全局配置的 `gh auth setup-git`。认证失败区分网络、账号、仓库权限与 helper 路径，修正后再次验证，不重复要求用户登录。
 6. 可读取仓库后，先只读取得远端清单，比较本机缺少、版本不同、身份不明的 Skill/MCP/插件；用户已明确选择的条目直接继续，否则先让用户选择，不默认全量恢复。选定后分别处理：自建资源在新目录 clone 并核对分支、提交、同名资源，按 safe-sync.md 检查所有命令目标后建立源码同步绑定、预览与分发；第三方只读取安装索引，按 third-party-updates.md 核实官方来源和最新稳定版本后从原生渠道安装，不加入源码同步绑定，不从仓库旧快照分发。安装与更新均服从用户显式版本限制，生成中文目录。审查模式禁止使用会隐式应用全部配置目标的 pull。用户已要求安装此 Skill 时，授权范围内完成宿主安装；已有同名内容不得直接覆盖。首次没有 Skill 可用时，接收电脑的 AI 可读取用户提供的已审核包说明来引导安装，不能形成“必须先运行未安装 Skill”的循环。
 7. 只恢复时验证读取权限即可，不用试推送证明读取。用户明确需要双向同步时检查写权限，并仅在已授权资源/分支范围提交和推送；无业务变更时不制造测试提交。有意做写入验收须在已授权测试路径中保留可核对证据。
 8. 验证文件摘要、链接目标、宿主发现、实际 Skill 调用、目录内容与同步状态。需要用户重新加载宿主或发起新对话时明确提示；宿主发现/调用尚未完成则标未验证，不能以 clone 成功代替全部对接成功。成功后只将非敏感路径、权限验证结果和实际状态写入库外本机绑定/记录。
@@ -69,48 +69,23 @@
 
 在仓库外 `bootstrap-progress.json` 记录已确认仓库/接收账号/操作范围、观察到的浏览器与 CLI 身份、邀请阶段、API/Git 验证结果及当前待谁操作；每项注明证据来源与时间，未知就保留未知。续接时检查实际页面、CLI 与旧授权进程，复用仍有效的选择和认证，不凭旧记录宣称成功。记录不保存设备码、凭证、邀请链接中的标识或完整敏感页面。
 
-## 1. 定位已有安装和本机绑定
+## 1. 定位本机绑定与依赖
 
-优先调用 `python <Skill>/scripts/sync_session.py --locate` 从本机非敏感定位指针读取绑定；无指针时使用已核实绑定路径显式 --binding，不靠旧聊天记忆猜路径。读取仓库外已知的本机绑定（结构见 [示例](../assets/local-binding.example.json)），核对记录的 CLI 文件是否仍存在。Windows 使用 Get-Command skillshare -All；macOS/Linux 使用 command -v skillshare；同时核对用户给出的安装目录和先前绑定路径。PATH 找不到只说明命令未在 PATH，不能据此重复安装。仅检查已知安装位置，不搜索整个磁盘或读取账号配置。
+优先调用 `python <Skill>/scripts/sync_session.py --locate`；无指针时使用已核实路径显式 --binding，不靠旧聊天猜路径或扫描账号配置。参考 [绑定示例](../assets/local-binding.example.json)。核对已有 Python/Git/gh 实际路径与版本，PATH 找不到不代表未安装；只检查用户已给定及已有记录的位置。
 
-从可信安装路径执行完整路径加 version，核对是否 v0.26.1。版本不同则保留旧安装；本草稿只验证过 v0.26.1。路径/来源不能确定时请求具体缺失信息，继续做不依赖 CLI 的清单审阅；不要猜测路径或把“未知”判成未安装。
+运行本项目脚本需要 Python 3.12+ 和 Git。使用完整可执行文件路径验证，不改 PATH、HOME、CODEX_HOME 或全局 Git 配置。缺依赖时按本次安装授权从其官方来源取得适用平台版本，核对官方校验和并记录；不覆盖已有安装、不执行未知脚本。GitHub CLI 仅在实际需要账号/API/建库时使用，已有认证直接复用。
 
-记录实际 OS 与 CPU 架构（Windows 可读取系统架构；Unix 可用 uname -s、uname -m），区分 amd64 与 arm64。不依据当前 shell 名称猜测硬件架构；不支持的架构停止安装。
+## 2. 取得独立管理器源码
 
-## 2. 取得官方固定版本并校验
+公开安装源为 https://github.com/fofiwo/ai-toolbox-sync-skill 。固定实际提交，核对根目录 SHA256SUMS.json，按 INSTALL.md 安装完整 skills/ai-toolbox-sync 目录。公开包默认空收藏，与私人库访问权限无关。已有安装先对比来源、旧基线和本地修改，走 [自维护](self-maintenance.md)，不能拿空包覆盖真实收藏数据。
 
-发布页：[v0.26.1](https://github.com/runkids/skillshare/releases/tag/v0.26.1)。资产 URL 为以下固定前缀加表中准确文件名：
+UPSTREAM.json 与随附历史许可只记录早期第三方材料，不参与命令执行、依赖安装或升级决策。
 
-`https://github.com/runkids/skillshare/releases/download/v0.26.1/`
+## 3. 建立本机映射，再逐项恢复
 
-| 实际平台 | 资产 |
-|---|---|
-| Windows x64 | skillshare_0.26.1_windows_amd64.zip |
-| Windows ARM64 | skillshare_0.26.1_windows_arm64.zip |
-| macOS Intel | skillshare_0.26.1_darwin_amd64.tar.gz |
-| macOS Apple Silicon | skillshare_0.26.1_darwin_arm64.tar.gz |
-| Linux x64 | skillshare_0.26.1_linux_amd64.tar.gz |
-| Linux ARM64 | skillshare_0.26.1_linux_arm64.tar.gz |
+按 [原生 Git 工作流](git-workflow.md) 在新目录取得获准仓库；读取清单让用户选择，比较实际宿主内容。绑定只保存本机 Git 根、Python/Git/gh 路径、授权、journal 和所选资源映射，机器状态在库外。不初始化已有库，不自动发现全部宿主目标。
 
-同时取得官方 [checksums.txt](https://github.com/runkids/skillshare/releases/download/v0.26.1/checksums.txt)，与草稿附带的 [发布校验快照](../assets/skillshare-v0.26.1-checksums.txt) 比较。Windows 用 Get-FileHash -Algorithm SHA256，Linux 用 sha256sum，macOS 用 shasum -a 256；必须按完整资产文件名匹配校验行，不用大小或下载成功代替校验。校验不一致停止，不执行。GitHub API 若提供资产 digest，可额外比较；限流时如实说明未做该额外检查。摘要同源校验不是独立发布者签名验证。
-
-所有下载和 Git/GitHub 请求遵循执行电脑的当前用户网络规则。本会话明确要求代理时，仅对对应命令临时设置 HTTP_PROXY/HTTPS_PROXY，先核实该电脑的代理地址与监听；不得把开发电脑的端口当成其他电脑的默认值。没有代理要求时使用本机既有网络，不人为制造代理前置条件。已要求走代理而连接失败时不擅自回退直连，不修改系统网络或持久化代理。
-
-已获下载/安装授权且确认无可复用安装后：在用户批准且本机绑定明确的 CLI 目录放置；不同机器独立选择路径，不把开发机盘符或路径迁入共享清单。先核对目录内容；存在不同文件不覆盖。保留归档、校验文件和 LICENSE，解压仅需 CLI 与许可，使用完整可执行文件路径调用，不需要改 PATH。
-
-把实际 cliPath、版本、资产名称/摘要、配置/XDG 目录、受管根和目标路径记入仓库外本机绑定。不要把开发机的绝对路径写进共享清单。复用现有安装时记录实际路径，不要求迁到以上建议位置。
-
-## 3. 取得这份草稿与原始上游
-
-先核对本机安装记录与选定资源的来源身份。公开安装源为 https://github.com/fofiwo/ai-toolbox-sync-skill ，固定提交后按根目录 INSTALL.md 安装 skills/ai-toolbox-sync；公开安装不需要私人收藏库权限。管理器的旧私人定制版先按 [管理器维护与升级](self-maintenance.md) 比较并保留额外功能，再迁移到公开维护流程，不直接用空包覆盖；其他工具仍按选定收藏来源恢复。
-
-公开包校验根目录 SHA256SUMS.json。管理器安装范围仅为本 Skill 源码目录，先取得到新审阅目录；正式宿主 Skill 目录的写入是另一个明确接入步骤，不能因文件已经下载就宣称已安装/触发。包内 UPSTREAM.json 保存上游来源和各原始文件摘要。
-
-原版可从 [固定 commit 的 Skill 目录](https://github.com/runkids/skillshare/tree/02d8dfffa08fe765a4e6f207a0ac9d45ee4150bf/skills/skillshare) 及 [LICENSE](https://github.com/runkids/skillshare/blob/02d8dfffa08fe765a4e6f207a0ac9d45ee4150bf/LICENSE) 获取。原版不包含本草稿的授权/询问/保护流程，不能用它替代本草稿并声称行为相同；不得执行其中 run.sh。
-
-## 4. 建立本机环境，再应用
-
-对照 safe-sync.md 同时绑定 XDG 四目录与 SKILLSHARE_CONFIG，确认 git_root 对应实际根；不改 HOME/CODEX_HOME。新电脑在新目录比较已有内容，不用 init --remote 接管旧目录。先使用现有 CLI 预览，scope 内所有目标和副作用检查完成后才应用。Windows + Codex 真实识别尚待正式接入验证；其它平台这里只有资产选择指引，没有运行验收。
+旧绑定保留原 Git 根、身份、journal、决策和收藏；遗留 CLI/XDG 字段不再执行，也不删改以便回退。逐文件应用前核对差异、基线和在用进程；依赖、MCP/插件注册在本机单独配置。文件、宿主发现与实际调用分别验证，其他平台未实测不能外推。
 
 ## 每机任务入口启用
 
