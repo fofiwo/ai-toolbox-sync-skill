@@ -1,5 +1,7 @@
 # 受管资源与本机绑定
 
+管理器自身先走 [管理器维护与升级](self-maintenance.md)：ai-toolbox-sync 不加入私人收藏或 taskSync 资源绑定；其干净源码只发布到公开源码库。普通资源规则不改变这个分流。
+
 清单示例在 ../assets/toolbox.example.json，只是工具箱数据，不是 Skillshare 可直接加载的配置。示例不授权安装或上传。没有通用清单执行器；由 AI 对照清单使用现有 CLI，一次处理已批准的条目。
 
 ## 纳管

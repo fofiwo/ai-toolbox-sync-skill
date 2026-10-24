@@ -1,5 +1,17 @@
 # 任务触发同步（完整性加固协议）
 
+管理器自身先走 [管理器维护与升级](self-maintenance.md)：ai-toolbox-sync 不加入私人收藏或 taskSync 资源绑定；其干净源码只发布到公开源码库。普通资源规则不改变这个分流。
+
+## 先确定“同步”的目标与完成标准
+
+用户说“同步”时，优先复用当前已确认的资源、仓库、分支、方向与操作范围。区分本机分发、工具箱 Git 上传/拉取、第三方官方更新和向项目源码库提交修改；这些不是同一操作。只有一个已确认绑定且范围明确时直接执行；没有绑定或多个候选时，先只读核实来源、远端清单和实际差异，再就缺失目标给具体选择，不把公开安装源自动当作上传目标。
+
+第三方安装包的本地修改仍保留原来源。用户可明确选择将改动贡献到该项目源码库，或将其他工具作为已确认的定制身份同步到指定私人库（本管理器除外）；需要核对该库中的资源身份及本机映射，不能仅凭同名就改 ownership=self 或上传第三方整包。已登记的定制版本保留其原功能和历史，先提出合并建议，有冲突按下文让用户选择。项目源码维护使用该项目既有 Git/发布检查，不为此伪造工具箱绑定或运行 Skillshare 初始化；工具箱资源同步继续遵循本文绑定、锁与完整性检查。
+
+用户本次明确要求上传已选资源，可更新此前仅恢复的操作范围，但不扩大到其他资源、仓库、公开发布或凭证。绑定定位失败须报告“未建立/未能读取绑定”及实际原因，不能把错误当作没有变化或同步成功；可继续准备可审阅差异，不静默另建绑定绕过。
+
+依次区分检查完成、本机纳入/提交、远端上传、目标安装与宿主实际加载。上传成功须实时查询授权分支，核实远端包含本次具体提交及选定文件内容；远端若前进，核实提交祖先关系和内容，不简单判失败或重推。命令退出成功、网页可见、邀请接受、文件保存或本地 HEAD 改变均不足以单独证明同步成功。凭证、机器路径和宿主配置继续留在库外。
+
 ## 触发策略（手动上传）
 
 本节是任务路由的统一规则，覆盖旧授权中“任务结束自动上传”的触发方式；已有库/分支/资源权限继续有效，但不代表本次要求上传。没有后台监控、轮询或自动收尾。
@@ -50,7 +62,7 @@
 
 observe.observation 必须包含：resourceId、sourceDigest、installedDigest、remoteTip、head、localPaths、remotePaths、remoteAvailable、scopeReviewed、inUse。摘要与提交必须为真实 SHA；断网 remoteTip=unknown、remoteAvailable=false，不能用缓存伪称 live。localPaths 比较 merge-base 到当前 HEAD 并含已暂存/未暂存/未跟踪改动；remotePaths 比较同一祖先到已取回远端。scopeReviewed 只能在 safe-sync 全部目标/删除/metadata/备份等检查后置 true，不是程序自动审查结果。
 
-用 fingerprint(installedPath, runtimeExclusions) 和 fingerprint(sourcePath, runtimeExclusions) 比较三层中的本地两层。顶层链接须提供已批准 expected_root，嵌套链接和 .env（不区分大小写）在读内容前拒绝。runtimeExclusions 只取预先核实绑定，本管理器仅 catalog/data.js、scripts/__pycache__；不临时排除业务文件来取得一致。跨任务无可靠内容变化证据则重新计算摘要；同任务可靠已核实基线且确认无写入时可复用，不以 mtime 或 TTL 替代内容证明。
+用 fingerprint(installedPath, runtimeExclusions) 和 fingerprint(sourcePath, runtimeExclusions) 比较三层中的本地两层。顶层链接须提供已批准 expected_root，嵌套链接和 .env（不区分大小写）在读内容前拒绝。runtimeExclusions 只取预先核实绑定，历史管理器绑定曾使用 catalog/data.js、scripts/__pycache__；这仅用于识别旧记录，当前管理器已分流到 self-maintenance.md，不再进入私人源码绑定。其他资源的排除项须逐项审定；不临时排除业务文件来取得一致。跨任务无可靠内容变化证据则重新计算摘要；同任务可靠已核实基线且确认无写入时可复用，不以 mtime 或 TTL 替代内容证明。
 
 ## 远端观察缓存
 

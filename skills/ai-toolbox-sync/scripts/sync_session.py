@@ -256,6 +256,8 @@ def load_binding(path, binding_path):
         raise ValueError("Branch differs from binding")
     resources = {}
     for resource in task["resources"]:
+        if Path(resource["installedPath"]).resolve() == Path(__file__).resolve().parent.parent:
+            raise ValueError("The manager uses public source maintenance, not private resource sync; review self-maintenance.md")
         if resource["id"] not in authorization["resourceIds"] or resource["id"] in resources:
             raise ValueError("Unknown or duplicate resource binding")
         Path(resource["sourcePath"]).resolve().relative_to(repo)

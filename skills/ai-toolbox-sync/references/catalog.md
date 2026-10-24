@@ -1,13 +1,15 @@
 # 本地只读目录
 
-双击 `catalog/index.html`，无需服务、联网或依赖安装。默认真实目录为空，示例按钮明确切换到演示清单；示例不代表已安装资源。页面只读，不运行安装、同步或上传。
+默认 `catalog/index.html` 是空模板。真实收藏页面先使用 `build_workspace.py --manifest "<已审核清单>/toolbox.json" --output "<新的库外工作台目录>"` 生成；有本机记录时显式加 `--records`，需要待收藏视图时加 `--snapshot` 和可选 `--binding`。打开输出的 `index.html`，无需服务、联网或依赖安装。默认真实目录为空，示例按钮明确切换到演示清单；示例不代表已安装资源。页面只读，不运行安装、同步或上传。
+
+需要将待收藏也放在同一页面时，按 [盘点与选择](inventory.md) 使用 `build_workspace.py` 生成并打开库外本机工作台。顶部切换收藏/待收藏视图；共享模板默认没有机器发现数据，工作台独立载入 `discovery-data.js`，不改变正式资源清单或收藏状态。收集完成后重新生成工作台，不能仅刷新旧页面就声称快照已更新。
 
 ## 唯一事实来源与刷新
 
-正式内容以用户选定的已审核 `toolbox.json` 为准。AI 只更新清单，不另行维护页面事实；`catalog/data.js` 是可重建产物，不手改。清单纳管/版本/验证状态变化后，在既有授权内运行：
+正式内容以用户选定的已审核 `toolbox.json` 为准。AI 只更新清单，不另行维护页面事实；`catalog/data.js` 是可重建产物，不手改。清单纳管/版本/验证状态变化后，优先生成新的库外工作台；仅刷新已有库外展示数据时，在既有授权内运行（目录须已存在）：
 
 ```powershell
-python "<Skill目录>/scripts/build_catalog.py" "<已审核清单>/toolbox.json" "<Skill目录>/catalog/data.js"
+python "<Skill目录>/scripts/build_catalog.py" "<已审核清单>/toolbox.json" "<已有库外工作台目录>/data.js"
 ```
 
 然后刷新已打开的页面。清单可选展示字段为 description、state、verification；不把 configured-only 等同调用验证。五轴状态按 [记录契约](decision-records.md) 读取，旧 management 兼容读取；生成的 management 只服务旧筛选，collected 始终显示已收藏，不受上传/刷新失败影响。新写入用 state，不继续混用旧字段。
@@ -47,7 +49,7 @@ python "<Skill目录>/scripts/build_catalog.py" "<已审核清单>/toolbox.json"
 有本机记录且已授权读取时，使用下面的完整命令，不把记录全文或机器状态复制进共享清单：
 
 ```powershell
-python "<Skill目录>/scripts/build_catalog.py" "<已审核清单>/toolbox.json" "<Skill目录>/catalog/data.js" --records "<本机记录目录>/decisions.json"
+python "<Skill目录>/scripts/build_catalog.py" "<已审核清单>/toolbox.json" "<已有库外工作台目录>/data.js" --records "<本机记录目录>/decisions.json"
 ```
 
 生成器只按稳定 id 合并对应条目的五轴枚举状态，不导出 decisionEvidence、history、sourceIdentity 或其它本机记录正文，不把未收藏的记录擅自添加为目录资源。明确的新 state 优先；旧字段保守兼容，缺证据显示未知。UI 详情分别显示用户决定、收藏结果、本机安装、同步结果、目录刷新；原纳管筛选是兼容视图，已收藏但上传失败仍在已收藏分类。

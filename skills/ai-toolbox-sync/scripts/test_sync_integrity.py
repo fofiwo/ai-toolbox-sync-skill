@@ -91,6 +91,16 @@ class IntegrityTests(unittest.TestCase):
             self.observe()
             self.assertEqual(self.call('confirm')['status'],'confirmed')
 
+    def test_manager_cannot_bind_itself_to_private_resource_sync(self):
+        original = self.binding.read_bytes()
+        self.bound['taskSync']['resources'][0]['installedPath'] = str(Path(m.__file__).resolve().parent.parent)
+        self.binding.write_text(json.dumps(self.bound))
+        try:
+            with self.assertRaisesRegex(ValueError, 'manager uses public source'):
+                m.load_binding(self.state_path, self.binding)
+        finally:
+            self.binding.write_bytes(original)
+
     def test_ignored_required_asset_blocks_confirm(self):
         (self.repo/'.gitignore').write_text('skills/example/assets/\n')
         self.commit(); self.git(self.repo,'push','origin','main')

@@ -1,6 +1,6 @@
 # ai-toolbox-sync
 
-干净的个人 AI 工具箱 Skill，基于 Skillshare v0.26.1。公开分发版本：0.2.3-draft；首期支持范围为 Windows + Codex。
+干净的个人 AI 工具箱 Skill，基于 Skillshare v0.26.1。公开分发版本：0.2.4-draft；首期支持范围为 Windows + Codex。
 
 ## 交给 AI 安装
 
@@ -17,11 +17,11 @@ Skill 路径：[skills/ai-toolbox-sync](skills/ai-toolbox-sync/SKILL.md)。安�
 
 只使用不检查；修改已纳管资源前比较差异；修改结束只提醒；用户主动同步才上传。不运行后台服务、不默认扫描全机、不自动改写全局 Agent 规则。
 
-本公开版只对分发文档做通用化并清空活动目录数据，运行脚本不变。接收者按第三方来源记录此 Skill，不继承发布者的自建身份或权限。CLI 二进制不随包提供，按引导单独核验安装。不要运行上游 run.sh。
+管理器源码只在本公开库维护；私人工具箱保存用户选定的其他工具，不收藏管理器自身。收藏清单、本机绑定和生成页面位于安装目录之外，升级步骤见 [管理器维护与升级](skills/ai-toolbox-sync/references/self-maintenance.md)。本版包含离线收藏/待收藏统一工作台，活动目录与发现模板保持空白。接收者按第三方来源记录此 Skill，不继承发布者的自建身份或权限。CLI 二进制不随包提供，按引导单独核验安装。不要运行上游 run.sh。
 
 ## 验证与边界
 
-见 [接收端验收](skills/ai-toolbox-sync/references/acceptance.md)。文件安装、宿主发现、实际触发、仓库认证、Git 读写及资源恢复分别验收。现有聊天不保证重载规则；不同账号邀请与新机器宿主加载需要接收者实际完成。
+见 [接收端验收](skills/ai-toolbox-sync/references/acceptance.md)。文件安装、宿主发现、实际触发、仓库认证、Git 读写及资源恢复分别验收。现有聊天不保证重载规则；已授权目标邀请由 AI 检查并接受；敏感输入、宿主强制本人操作及实际新会话加载分别验证。
 
 ## 维护与发布
 

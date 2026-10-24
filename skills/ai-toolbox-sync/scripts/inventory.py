@@ -276,6 +276,7 @@ def build(snapshot, output):
     model = Path(__file__).parent.parent / 'catalog' / 'inventory-model.js'
     payload = json.dumps(snapshot, ensure_ascii=False).replace('<', '\\u003c').replace('>', '\\u003e').replace('&', '\\u0026')
     html = template.read_text(encoding='utf-8').replace('/* INVENTORY_MODEL */', model.read_text(encoding='utf-8'))
+    html = html.replace('/* INVENTORY_APP */', (template.parent / 'inventory-app.js').read_text(encoding='utf-8'))
     html = html.replace('/* INVENTORY_BASE_STYLE */', (template.parent / 'style.css').read_text(encoding='utf-8'))
     html = html.replace('__CATALOG_URI__', (template.parent / 'index.html').resolve().as_uri())
     html = html.replace('/* INVENTORY_DATA */', payload)

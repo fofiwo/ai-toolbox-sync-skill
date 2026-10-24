@@ -102,6 +102,15 @@ def main():
         parser.error("Output must not be a symbolic link or replace an input file")
     records = read_store(args.records)[1]["records"] if args.records else None
     result=export(json.loads(args.manifest.read_text(encoding="utf-8-sig")),args.demo,records)
+    output = args.output.absolute()
+    if any(p.is_symlink() or (hasattr(p, 'is_junction') and p.is_junction())
+           for p in (output, *output.parents)):
+        parser.error("Output must not traverse links")
+    if not args.demo and result['resources']:
+        target = output.resolve()
+        if target.is_relative_to(Path(__file__).resolve().parent.parent) or any(
+                (p / '.git').exists() for p in (target.parent, *target.parent.parents)):
+            parser.error("Real catalogs belong in a machine-local workspace outside the Skill and Git repositories")
     payload=json.dumps(result,ensure_ascii=False,indent=2).replace("<","\\u003c").replace("\u2028","\\u2028").replace("\u2029","\\u2029")
     content = "// Generated from the audited manifest; do not edit.\nwindow."+("TOOLBOX_DEMO" if args.demo else "TOOLBOX_DATA")+" = "+payload+";\n"
     temporary = None

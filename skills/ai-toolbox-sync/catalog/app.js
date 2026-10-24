@@ -86,4 +86,19 @@ $("copy-operation").onclick=async()=>{
   }
 };
 $("search").oninput=render;$("status").onchange=render;$("demo").onclick=()=>{demo=!demo;checked.clear();kind="all";category="all";selected=null;$("search").value="";$("status").value="all";render();};
+const discovery = window.TOOLBOX_DISCOVERY;
+if(discovery) {
+  InventoryApp.mount(discovery, "pending-");
+  $("pending-empty").hidden=true;
+  $("pending-content").hidden=false;
+  $("view-pending").textContent="待收藏 / 未核对 "+InventoryModel.stats(discovery.groups).components;
+}
+function showView(pending) {
+  $("collected-view").hidden=pending;
+  $("pending-view").hidden=!pending;
+  $("view-collected").setAttribute("aria-pressed",String(!pending));
+  $("view-pending").setAttribute("aria-pressed",String(pending));
+}
+$("view-collected").onclick=()=>showView(false);
+$("view-pending").onclick=()=>showView(true);
 render();

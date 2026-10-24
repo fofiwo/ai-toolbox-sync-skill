@@ -35,6 +35,22 @@ class ReleaseTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             release.validate(files)
 
+    def test_machine_discovery_rejected(self):
+        files = dict(self.files)
+        files[release.DISCOVERY] = b'window.TOOLBOX_DISCOVERY = null;'
+        release.validate(files, manifest=False)
+        for payload in [b'{}', b'window.TOOLBOX_DISCOVERY = {"groups":[]};',
+                        b'window.TOOLBOX_DISCOVERY = null; additionalCode()']:
+            files[release.DISCOVERY] = payload
+            with self.assertRaisesRegex(ValueError, 'discovery'):
+                release.validate(files, manifest=False)
+
+    def test_workspace_distribution_requires_empty_discovery(self):
+        files = dict(self.files)
+        files['skills/ai-toolbox-sync/scripts/build_workspace.py'] = b'# synthetic'
+        with self.assertRaisesRegex(ValueError, 'Discovery template missing'):
+            release.validate(files, manifest=False)
+
     def test_tampered_file(self):
         files = dict(self.files)
         files['README.md'] += b'changed'

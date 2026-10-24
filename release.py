@@ -10,7 +10,14 @@ ROOT = Path(__file__).resolve().parent
 BASE = 'd30213adaf3280a563fa8518a683ccc9c7beb135'
 REMOTE = 'https://github.com/fofiwo/ai-toolbox-sync-skill.git'
 DATA = 'skills/ai-toolbox-sync/catalog/data.js'
-EXTRA = {'release.py', 'test_release.py', 'AGENTS.md', 'PUBLICATION.md'}
+DISCOVERY = 'skills/ai-toolbox-sync/catalog/discovery-data.js'
+EXTRA = {'release.py', 'test_release.py', 'AGENTS.md', 'PUBLICATION.md',
+         'skills/ai-toolbox-sync/catalog/discovery-data.js',
+         'skills/ai-toolbox-sync/catalog/inventory-app.js',
+         'skills/ai-toolbox-sync/scripts/build_workspace.py',
+         'skills/ai-toolbox-sync/scripts/test_workspace.py',
+         'skills/ai-toolbox-sync/scripts/test_workspace.cjs',
+         'skills/ai-toolbox-sync/references/self-maintenance.md'}
 
 
 def git(*args):
@@ -35,6 +42,12 @@ def validate(files, manifest=True):
     require(raw.startswith('window.TOOLBOX_DATA ='), 'Invalid catalog assignment')
     require(json.loads(raw.split('=', 1)[1].rstrip(';')) ==
             {'exampleOnly': False, 'resources': []}, 'Public catalog must be empty')
+    # Older audited commits predate this template. New workspace distributions need it.
+    if 'skills/ai-toolbox-sync/scripts/build_workspace.py' in files:
+        require(DISCOVERY in files, 'Discovery template missing')
+    if DISCOVERY in files:
+        require(files[DISCOVERY].decode('utf-8').strip() ==
+                'window.TOOLBOX_DISCOVERY = null;', 'Public discovery must be empty')
     for name, body in files.items():
         require(len(body) <= 2_000_000, 'Oversized public file')
         require(not re.search(rb'gh[pousr]_[A-Za-z0-9]{30,}|github_pat_[A-Za-z0-9_]{30,}|-----BEGIN (?:RSA |EC |OPENSSH )?PRIVATE KEY-----', body),

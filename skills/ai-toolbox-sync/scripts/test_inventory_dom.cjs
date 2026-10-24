@@ -18,7 +18,7 @@ const snapshot={generatedAt:'2026-10-22T00:00:00Z',scopes:[],warnings:[],groups:
 document.getElementById('kind').value='all';
 let copied='';const ctx=vm.createContext({document,navigator:{clipboard:{writeText:async t=>{copied=t}}},Set,Date});
 const template=fs.readFileSync(path.join(__dirname,'../catalog/inventory.html'),'utf8');
-const html=template.replace('/* INVENTORY_MODEL */',fs.readFileSync(path.join(__dirname,'../catalog/inventory-model.js'),'utf8')).replace('/* INVENTORY_DATA */',JSON.stringify(snapshot));
+const html=template.replace('/* INVENTORY_MODEL */',fs.readFileSync(path.join(__dirname,'../catalog/inventory-model.js'),'utf8')).replace('/* INVENTORY_APP */',fs.readFileSync(path.join(__dirname,'../catalog/inventory-app.js'),'utf8')).replace('/* INVENTORY_DATA */',JSON.stringify(snapshot));
 for(const m of html.matchAll(/<script>([\s\S]*?)<\/script>/g))vm.runInContext(m[1],ctx);
 assert.equal(ids.list.children.length,2);assert.equal(ids.copy.disabled,true);
 ids['select-visible'].onclick();assert.equal(ids.copy.disabled,false);
