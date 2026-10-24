@@ -1,6 +1,6 @@
 # ai-toolbox-sync
 
-独立维护的个人 AI 工具箱项目。公开分发版本：0.3.0-draft；首期支持范围为 Windows + Codex。
+独立维护的个人 AI 工具箱项目。公开分发版本：0.4.0-draft；首期支持范围为 Windows + Codex。
 
 ## 交给 AI 安装
 
@@ -26,6 +26,8 @@ Skill 路径：[skills/ai-toolbox-sync](skills/ai-toolbox-sync/SKILL.md)。安�
 ## 维护与发布
 
 通用优化在此公开仓库维护，私人收藏与机器状态不进入此仓库。发布必须按 [PUBLICATION.md](PUBLICATION.md) 使用本地发布门禁；摘要清单不等于隐私审查。现有私人同步绑定不因公开发布而改变。
+
+版本以 Skill 内的 `VERSION` 为唯一来源。AI 根据变化选择 `python -B release.py bump patch|minor|major`，统一更新元数据、README、页面和摘要；`prerelease` 递增草稿序号，`final` 去掉预发布标识。开发提交可以共用草稿版本，每次有新内容的对外发布必须升版。`release.py push` 原子发布 main 与精确 `v<VERSION>` 标签，拒绝复用版本、倒退和标签覆盖；没有变化时不制造新版本。`release.py version` 只读检查当前版本，发布仍需用户本次同步授权。
 
 ## 来源
 
