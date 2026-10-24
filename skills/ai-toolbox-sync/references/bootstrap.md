@@ -77,6 +77,8 @@
 
 ## 2. 取得独立管理器源码
 
+仅更新管理器时直接进入本节和 [旧电脑升级](self-maintenance.md#旧电脑缺少来源或仍加载旧指令)，无需先定位私人绑定、申请私人库权限或读取收藏。对象不明先按 [首页分流](../SKILL.md#同步前先分流) 询问。已知公开来源由 AI 自行读取，不让用户重复提供链接。
+
 公开安装源为 https://github.com/fofiwo/ai-toolbox-sync-skill 。固定实际提交，核对根目录 SHA256SUMS.json，按 INSTALL.md 安装完整 skills/ai-toolbox-sync 目录。公开包默认空收藏，与私人库访问权限无关。已有安装先对比来源、旧基线和本地修改，走 [自维护](self-maintenance.md)，不能拿空包覆盖真实收藏数据。
 
 UPSTREAM.json 与随附历史许可只记录早期第三方材料，不参与命令执行、依赖安装或升级决策。
