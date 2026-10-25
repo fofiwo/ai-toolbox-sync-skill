@@ -56,14 +56,14 @@ def digest(entries):
     return hashlib.sha256(json.dumps(sorted(entries.items()), ensure_ascii=False).encode('utf-8')).hexdigest()
 
 
-def git(repo, *args, input=None, timeout=30):
+def git(repo, *args, input=None, timeout=30, env=None, accepted=(0,), return_result=False):
     # Windows Git 启动器的后代可持有管道；临时文件避免超时后的输出回收无限等待。
-    with tempfile.TemporaryFile() as output, tempfile.TemporaryFile() as incoming:
+    with tempfile.TemporaryFile() as output, tempfile.TemporaryFile() as errors, tempfile.TemporaryFile() as incoming:
         if input is not None:
             incoming.write(input)
         incoming.seek(0)
         process = subprocess.Popen(['git', '-C', str(repo), *args], stdin=incoming,
-            env=dict(os.environ), stdout=output, stderr=subprocess.DEVNULL,
+            env=dict(os.environ, **(env or {})), stdout=output, stderr=errors,
             start_new_session=os.name != 'nt')
         try:
             process.wait(timeout=timeout)
@@ -83,9 +83,12 @@ def git(repo, *args, input=None, timeout=30):
                 process.kill()
             process.wait(timeout=5)
             raise
-        if process.returncode:
+        if process.returncode not in accepted:
             raise ValueError('Git evidence command failed; no completeness claim')
         output.seek(0)
+        if return_result:
+            errors.seek(0)
+            return subprocess.CompletedProcess(process.args, process.returncode, output.read(), errors.read())
         return output.read()
 
 

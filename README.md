@@ -17,6 +17,8 @@ Skill 路径：[skills/ai-toolbox-sync](skills/ai-toolbox-sync/SKILL.md)。安�
 
 只使用不检查；修改已纳管资源前比较差异；修改结束只提醒；用户主动同步才上传。不运行后台服务、不默认扫描全机、不自动改写全局 Agent 规则。
 
+收藏同步提供可执行入口：`python -B <Skill>/scripts/sync_session.py status|sync --binding <本机绑定.json>`。`status` 只读本机，`sync --dry-run` 实时取得差异并生成计划，`sync` 在本次授权范围内精确提交、三方合并兼容变化、验证和上传。收藏清单按稳定 id 合并；真实冲突、身份变化和未授权删除才交给用户。失败保留 Git 提交和库外恢复收据；没有变化不造版本。Git 同步、独立安装应用和宿主加载分别报告，详见 [执行流程](skills/ai-toolbox-sync/references/task-sync.md#收藏同步执行入口)。
+
 管理器源码只在本公开库维护；私人工具箱保存用户选定的其他工具，不收藏管理器自身。收藏清单、本机绑定和生成页面位于安装目录之外，升级步骤见 [管理器维护与升级](skills/ai-toolbox-sync/references/self-maintenance.md)。本版包含离线收藏/待收藏统一工作台，活动目录与发现模板保持空白。接收者按第三方来源记录此 Skill，不继承发布者的自建身份或权限。依赖为 Python 3.12+、原生 Git；GitHub 接入复用 gh。Git 传输、选择性文件应用和宿主注册分别执行，不安装其他工具箱管理器。
 
 ## 验证与边界
