@@ -2,7 +2,7 @@
 name: ai-toolbox-sync
 description: 配置个人 AI 工具箱，管理 Skill、MCP、插件和 Agent 文档。区分公开管理器升级与私人收藏同步；范围不明先询问。收藏同步使用可执行的 Git 工作流，兼容变化经校验直接合并，真实冲突、身份变更和未授权删除才询问。自建资源保存源码，第三方保存官方来源；只收集不上传，只检查不安装，用户主动同步才提交上传。支持差异预览、中断后核验和选择性恢复；仅使用不联网，无后台服务。
 metadata:
-  version: 0.4.1-draft
+  version: 0.5.0-draft
   repository: https://github.com/fofiwo/ai-toolbox-sync-skill
 ---
 

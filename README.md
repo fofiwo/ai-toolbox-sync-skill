@@ -1,6 +1,6 @@
 # ai-toolbox-sync
 
-独立维护的个人 AI 工具箱项目。公开分发版本：0.4.1-draft；首期支持范围为 Windows + Codex。
+独立维护的个人 AI 工具箱项目。公开分发版本：0.5.0-draft；首期支持范围为 Windows + Codex。
 
 ## 交给 AI 安装
 
