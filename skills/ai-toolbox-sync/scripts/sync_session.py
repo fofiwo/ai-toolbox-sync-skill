@@ -807,6 +807,11 @@ def collection_sync(binding_path=None, *, dry_run=False, extra_paths=(), allow_d
             raise ValueError('Files changed after planning; nothing committed')
         if plan['localTree'] != collection_git(repo, 'rev-parse', 'HEAD^{tree}').stdout.decode().strip():
             names = sorted(set(plan['localChanges']) & set(plan['workingHashes']))
+            # hash-object 使用规范化规则；显式重规范化避免旧索引 CRLF 启发式产生不同树。
+            tracked = collection_tree(repo, 'HEAD')
+            existing = [n for n in names if n in tracked and (Path(repo) / n).is_file()]
+            if existing:
+                collection_git(repo, '--literal-pathspecs', 'add', '--renormalize', '--', *existing)
             collection_git(repo, '--literal-pathspecs', 'add', '--', *names)
             if collection_git(repo, 'write-tree').stdout.decode().strip() != plan['localTree']:
                 raise ValueError('Actual index differs from the approved plan')

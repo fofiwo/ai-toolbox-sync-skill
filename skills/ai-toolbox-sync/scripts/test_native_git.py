@@ -201,6 +201,21 @@ class NativeGitTests(unittest.TestCase):
         self.assertEqual(self.sync()['head'], result['head'])
         self.assertFalse(self.git(self.repo, 'status', '--porcelain'))
 
+    def test_legacy_crlf_index_and_mixed_worktree_match_planned_tree(self):
+        name = 'skills/demo/entry[1].txt'
+        raw = b'old\r\nsecond\r\n'
+        (self.repo / name).write_bytes(raw)
+        self.git(self.repo, 'config', 'core.autocrlf', 'false')
+        self.git(self.repo, '--literal-pathspecs', 'add', '--', name)
+        self.git(self.repo, 'commit', '-m', 'legacy CRLF index')
+        self.push(self.repo, self.git(self.repo, 'rev-parse', 'HEAD'))
+        self.git(self.repo, 'config', 'core.autocrlf', 'true')
+        for directory in (self.source, self.installed):
+            (directory / 'entry[1].txt').write_bytes(b'new\r\nsecond\n')
+        result = self.sync()
+        self.assertEqual(result['status'], 'synced')
+        self.assertEqual(self.sync()['head'], result['head'])
+
     def test_remote_only_fast_forwards_without_installing(self):
         other = self.other()
         head = self.update(other, 'skills/demo/new.txt', 'remote\n')
