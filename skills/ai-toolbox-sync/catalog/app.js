@@ -1,5 +1,19 @@
 "use strict";
 const M = ToolboxModel, $ = id => document.getElementById(id);
+function showWorkspaceCheck() {
+  const notice = $("workspace-check"), hash = window.location?.hash || "";
+  notice.hidden = true;
+  if (!hash.startsWith("#toolbox-check=")) return;
+  const params = new URLSearchParams(hash.slice(1)), status = params.get("toolbox-check");
+  if (!["updated", "cached", "stale-cache"].includes(status)) return;
+  const date = new Date(params.get("checkedAt")), time = Number.isFinite(date.getTime()) ? date.toLocaleString() : "时间未知";
+  notice.textContent = status === "stale-cache"
+    ? "本次检查失败，正在显示上次成功快照；未确认最新状态。检查时间：" + time
+    : "入口已检查本机目录（" + time + "）；此页面仍为快照。";
+  notice.hidden = false;
+}
+showWorkspaceCheck();
+window.addEventListener?.("hashchange", showWorkspaceCheck);
 let demo = false, kind = "all", category = "all", selected = null;
 const checked = new Set();
 const text = (tag, value, className) => { const e = document.createElement(tag); e.textContent = typeof value === "string" && value !== "unknown" ? value : "未知"; if(className) e.className = className; return e; };

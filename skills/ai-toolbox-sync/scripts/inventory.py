@@ -59,19 +59,30 @@ def read_json(p):
     return data
 
 
-def walk(root, warnings):
+def walk(root, warnings, strict=False):
     """Do not follow nested links; a supplied root is the explicit scan boundary."""
     root = Path(root)
     if not root.is_dir():
+        if strict:
+            raise OSError('Discovery scope is unavailable')
         warnings.append('范围不存在：' + clean(str(root)))
         return
     if linked(root):
+        if strict:
+            raise ValueError('Discovery root must not be a link')
         warnings.append('跳过链接根目录，请核实后显式指定真实目标：' + clean(str(root)))
         return
     visited = 0
-    for directory, dirs, files in os.walk(root, followlinks=False):
+    def onerror(error):
+        if strict:
+            raise error
+        warnings.append('无法遍历目录，结果不完整：' + clean(str(error.filename)))
+
+    for directory, dirs, files in os.walk(root, followlinks=False, onerror=onerror):
         visited += 1
         if visited > 20000:
+            if strict:
+                raise ValueError('Discovery directory limit exceeded')
             warnings.append('扫描达到目录上限，结果不完整：' + clean(str(root)))
             return
         base = Path(directory)
@@ -103,7 +114,8 @@ def skill_name(path):
 
 
 class Inventory:
-    def __init__(self):
+    def __init__(self, strict=False):
+        self.strict = strict
         self.groups = {}
         self.warnings = []
         self.seen = set()
@@ -136,9 +148,11 @@ class Inventory:
                 if not isinstance(entries, dict):
                     raise ValueError('invalid skill lock')
             except (ValueError, OSError):
+                if self.strict:
+                    raise
                 self.warnings.append('安装来源索引无效，按未知来源处理：' + clean(str(lock)))
                 entries = {}
-        for folder, files in walk(root, self.warnings):
+        for folder, files in walk(root, self.warnings, self.strict):
             if 'SKILL.md' not in files:
                 continue
             path = folder / 'SKILL.md'
@@ -157,6 +171,8 @@ class Inventory:
                 self.add(skill_name(path), 'skill', folder, source=source, component=component,
                          evidence=str(lock) if source else '缺少可核实安装来源；不凭名称或内容相同合并')
             except (ValueError, OSError):
+                if self.strict:
+                    raise
                 self.warnings.append('无法读取 Skill 元数据：' + clean(str(path)))
 
     def plugins(self, root):

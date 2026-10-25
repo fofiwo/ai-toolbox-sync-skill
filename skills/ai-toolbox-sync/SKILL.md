@@ -2,7 +2,7 @@
 name: ai-toolbox-sync
 description: 配置个人 AI 工具箱，管理 Skill、MCP、插件和 Agent 文档。区分公开管理器升级与私人收藏同步；范围不明先询问。收藏同步使用可执行的 Git 工作流，兼容变化经校验直接合并，真实冲突、身份变更和未授权删除才询问。自建资源保存源码，第三方保存官方来源；只收集不上传，只检查不安装，用户主动同步才提交上传。支持差异预览、中断后核验和选择性恢复；仅使用不联网，无后台服务。
 metadata:
-  version: 0.5.0-draft
+  version: 0.6.0-draft
   repository: https://github.com/fofiwo/ai-toolbox-sync-skill
 ---
 
@@ -30,7 +30,7 @@ metadata:
 
 - 准备修改、续接已有修改、跨电脑更新、同步或发布 ai-toolbox-sync 自身，或私人库曾收藏本管理器：先读 [管理器维护与升级](references/self-maintenance.md)。修改前记录 start 基线，精确暂存后 finish，获准提交后 verify-commit；离线本地保存与正式发布分开。安装定制先比较并保留。自身源码只在公开源码库维护和发布，私人库不收藏管理器；先隔离收藏与本机状态，再执行独立升级。此分流优先于普通自建资源同步。
 
-- 收藏与待收藏统一工作台：读 [盘点与选择](references/inventory.md)，在库外生成只读页面；未载入发现快照时显示空态，不自动盘点。
+- 收藏与待收藏统一工作台：读 [盘点与选择](references/inventory.md)。用户要求打开本机工作台时，通过 `build_workspace.py --refresh` 检查已授权 Skill 目录并复用/更新库外缓存，再打开实际输出页；扫描失败保留旧快照并明确标记。离线页面自身不扫描、不联网、不上传。
 
 - 本机资源盘点、按来源项目统计、HTML 勾选后生成收集提示词：读 [盘点与选择](references/inventory.md)。使用独立发现快照，不能把未收藏资源塞入正式工具箱目录；插件/Skill 集合按来源归组，未知来源保留独立。
 

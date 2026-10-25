@@ -3,6 +3,7 @@ import json
 from pathlib import Path
 import tempfile
 import unittest
+from unittest.mock import patch
 import inventory as m
 
 
@@ -19,6 +20,16 @@ class DiscoveryTests(unittest.TestCase):
         target.parent.mkdir(parents=True, exist_ok=True)
         target.write_text(content, encoding='utf-8')
         return target
+
+    def test_strict_scan_does_not_turn_access_failure_into_empty_success(self):
+        self.put('skills/demo/SKILL.md', '---\nname: demo\n---')
+        def denied(*args, **kwargs):
+            kwargs['onerror'](PermissionError('fixture denied'))
+            return iter(())
+        with patch.object(m.os, 'walk', side_effect=denied), self.assertRaises(PermissionError):
+            m.Inventory(strict=True).skills(self.root / 'skills')
+        with self.assertRaises(OSError):
+            m.Inventory(strict=True).skills(self.root / 'missing')
 
     def test_project_components_and_repeated_scan(self):
         self.put('host/.skill-lock.json', json.dumps({'skills': {

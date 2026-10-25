@@ -6,6 +6,12 @@ import tempfile
 import unittest
 import subprocess
 import sys
+import shutil
+import io
+from contextlib import redirect_stdout
+from unittest.mock import patch
+
+import build_workspace as workspace
 
 from build_workspace import build_workspace, pending_snapshot
 from build_catalog import export
@@ -126,6 +132,217 @@ class WorkspaceTests(unittest.TestCase):
         result = subprocess.run([sys.executable, '-B', str(script), str(source), str(target)], capture_output=True)
         self.assertNotEqual(result.returncode, 0)
         self.assertEqual(target.read_bytes(), b'original template')
+
+
+class WorkspaceCacheTests(unittest.TestCase):
+    def setUp(self):
+        self.temp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.temp.cleanup)
+        self.root = Path(self.temp.name)
+        self.skills = self.root / 'skills'
+        self.skill = self.skills / 'demo' / 'SKILL.md'
+        self.skill.parent.mkdir(parents=True)
+        self.skill.write_text('---\nname: Demo\n---\n', encoding='utf-8')
+        self.manifest = self.root / 'toolbox.json'
+        self.manifest.write_text(json.dumps(dict(schemaVersion=1, resources=[])), encoding='utf-8')
+        self.cache = self.root / 'cache'
+
+    def refresh(self, **kwargs):
+        return workspace.refresh_workspace(self.manifest, self.cache, [self.skills], **kwargs)
+
+    def test_first_open_populates_and_unchanged_open_reuses_verified_cache(self):
+        first = self.refresh()
+        self.assertEqual((first['status'], first['pending']), ('updated', 1))
+        page = Path(first['output'])
+        before = {p.name: p.read_bytes() for p in page.parent.iterdir()}
+        state = (self.cache / 'cache.json').read_bytes()
+        second = self.refresh()
+        self.assertEqual((second['status'], second['output'], second['generatedAt']),
+                         ('cached', first['output'], first['generatedAt']))
+        self.assertEqual((self.cache / 'cache.json').read_bytes(), state)
+        self.assertEqual({p.name: p.read_bytes() for p in page.parent.iterdir()}, before)
+        discovery = json.loads((page.parent / 'discovery-data.js').read_text(encoding='utf-8').split('=', 1)[1].rstrip(';\n'))
+        self.assertEqual(discovery['groups'][0]['components'][0]['name'], 'Demo')
+        self.assertEqual((self.cache / 'refresh.lock').read_bytes(), b'\0')
+
+    def test_add_rename_remove_and_collection_changes_refresh_without_overwriting_old_page(self):
+        first = self.refresh()
+        old = Path(first['output']).read_bytes()
+        self.skill.write_text('---\nname: Renamed\n---\n', encoding='utf-8')
+        renamed = self.refresh()
+        self.assertEqual(renamed['status'], 'updated')
+        self.assertIn('Renamed', (Path(renamed['output']).parent / 'discovery-data.js').read_text(encoding='utf-8'))
+        extra = self.skills / 'extra' / 'SKILL.md'
+        extra.parent.mkdir()
+        extra.write_text('---\nname: Extra\n---\n', encoding='utf-8')
+        self.assertEqual(self.refresh()['pending'], 2)
+        extra.unlink()
+        self.assertEqual(self.refresh()['pending'], 1)
+        self.manifest.write_text(json.dumps(dict(schemaVersion=1, resources=[dict(id='demo', kind='skill', name='Collected')])), encoding='utf-8')
+        changed = self.refresh()
+        self.assertEqual((changed['status'], changed['collected']), ('updated', 1))
+        self.assertEqual(Path(first['output']).read_bytes(), old)
+
+    def test_scan_failure_retains_last_good_cache_and_first_failure_cannot_claim_success(self):
+        first = self.refresh()
+        before = (self.cache / 'cache.json').read_bytes()
+        with patch.object(workspace.Inventory, 'skills', side_effect=OSError('fixture access denied')):
+            stale = self.refresh()
+        self.assertEqual((stale['status'], stale['output']), ('stale-cache', first['output']))
+        self.assertIn('未确认最新', stale['warning'])
+        self.assertEqual((self.cache / 'cache.json').read_bytes(), before)
+        with self.assertRaises(OSError):
+            workspace.refresh_workspace(self.manifest, self.root / 'empty-cache', [self.root / 'missing'])
+        self.assertEqual((self.cache / 'refresh.lock').read_bytes(), b'\0')
+
+    def test_different_scope_cannot_fall_back_to_old_inventory(self):
+        self.refresh()
+        with self.assertRaises(OSError):
+            workspace.refresh_workspace(self.manifest, self.cache, [self.root / 'missing'])
+
+    def test_tampered_page_and_template_update_rebuild_cache(self):
+        first = self.refresh()
+        Path(first['output']).write_text('tampered', encoding='utf-8')
+        repaired = self.refresh()
+        self.assertEqual(repaired['status'], 'updated')
+        self.assertNotEqual(repaired['output'], first['output'])
+        assets = self.root / 'assets'
+        shutil.copytree(workspace.ASSETS, assets)
+        with (assets / 'style.css').open('a', encoding='utf-8') as stream:
+            stream.write('\n/* updated template */\n')
+        with patch.object(workspace, 'ASSETS', assets):
+            updated = self.refresh()
+        self.assertEqual(updated['status'], 'updated')
+        self.assertIn('updated template', (Path(updated['output']).parent / 'style.css').read_text(encoding='utf-8'))
+
+    def test_collection_records_and_binding_refresh_pending_exclusions(self):
+        self.manifest.write_text(json.dumps(dict(schemaVersion=1, resources=[dict(id='demo', kind='skill', name='Demo')])), encoding='utf-8')
+        records = self.root / 'decisions.json'
+        records.write_text(json.dumps(dict(schemaVersion=1, records=[])), encoding='utf-8')
+        binding = self.root / 'binding.json'
+        binding.write_text(json.dumps(dict(taskSync=dict(resources=[dict(id='demo', installedPath=str(self.skill.parent))]))), encoding='utf-8')
+        first = self.refresh(records=records, binding=binding)
+        records.write_text(json.dumps(dict(schemaVersion=1, records=[dict(id='demo', state=dict(collection='collected'))])), encoding='utf-8')
+        second = self.refresh(records=records, binding=binding)
+        self.assertEqual((first['pending'], second['pending'], second['status']), (1, 0, 'updated'))
+
+    def test_lock_invalid_inputs_and_unrelated_directory_are_preserved(self):
+        self.refresh()
+        lock = self.cache / 'refresh.lock'
+        lock.write_text('other writer', encoding='ascii')
+        with self.assertRaisesRegex(ValueError, 'Unknown workspace lock'):
+            self.refresh()
+        self.assertEqual(lock.read_text(encoding='ascii'), 'other writer')
+        other = self.root / 'unrelated'
+        other.mkdir()
+        (other / 'keep.txt').write_text('keep', encoding='utf-8')
+        with self.assertRaisesRegex(ValueError, 'unrelated'):
+            workspace.refresh_workspace(self.manifest, other, [self.skills])
+        with self.assertRaisesRegex(ValueError, 'regular JSON'):
+            workspace.refresh_workspace(self.root / '.env', self.root / 'unused', [self.skills])
+        self.assertFalse((self.root / 'unused').exists())
+
+    def test_open_entry_uses_checked_cache_and_reports_stale_fallback(self):
+        first = self.refresh()
+        argv = ['build_workspace.py', '--refresh', '--manifest', str(self.manifest),
+                '--skill-root', str(self.skills), '--output', str(self.cache), '--open']
+        with patch.object(sys, 'argv', argv), patch('webbrowser.open') as opened, redirect_stdout(io.StringIO()) as output:
+            self.assertEqual(workspace.main(), 0)
+        self.assertEqual(json.loads(output.getvalue())['status'], 'cached')
+        opened.assert_called_once_with(json.loads(output.getvalue())['url'])
+        with patch.object(sys, 'argv', argv), patch('webbrowser.open') as opened, \
+                patch.object(workspace.Inventory, 'skills', side_effect=OSError('fixture unavailable')), \
+                redirect_stdout(io.StringIO()) as output:
+            self.assertEqual(workspace.main(), 2)
+        self.assertEqual(json.loads(output.getvalue())['status'], 'stale-cache')
+        opened.assert_called_once_with(json.loads(output.getvalue())['url'])
+        self.assertIn('toolbox-check=stale-cache', opened.call_args.args[0])
+
+    def test_native_lock_blocks_concurrent_writer_and_recovers_after_crash(self):
+        self.refresh()
+        lock = self.cache / 'refresh.lock'
+        script = 'import sys,time; from pathlib import Path; from build_workspace import workspace_lock\nwith workspace_lock(Path(sys.argv[1])):\n print("locked",flush=True)\n time.sleep(30)'
+        child = subprocess.Popen([sys.executable, '-B', '-c', script, str(lock)],
+                                 cwd=Path(workspace.__file__).parent, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        try:
+            self.assertEqual(child.stdout.readline().strip(), b'locked')
+            with self.assertRaises(OSError):
+                self.refresh()
+        finally:
+            child.kill()
+            child.communicate(timeout=10)
+        self.assertEqual(self.refresh()['status'], 'cached')
+        # A crash before the first cache marker was written also remains recoverable.
+        fresh = self.root / 'interrupted'
+        fresh.mkdir()
+        (fresh / 'refresh.lock').write_bytes(b'\0')
+        self.assertEqual(workspace.refresh_workspace(self.manifest, fresh, [self.skills])['status'], 'updated')
+
+    def test_input_change_during_scan_or_build_never_claims_fresh_or_replaces_cache(self):
+        self.refresh()
+        before = (self.cache / 'cache.json').read_bytes()
+        original = self.manifest.read_bytes()
+        scan = workspace.Inventory.skills
+        def changed(inv, root):
+            scan(inv, root)
+            self.manifest.write_text(json.dumps(dict(schemaVersion=1, resources=[dict(id='new', kind='skill', name='New')])), encoding='utf-8')
+        with patch.object(workspace.Inventory, 'skills', changed), self.assertRaisesRegex(ValueError, 'inputs changed'):
+            self.refresh()
+        self.assertEqual((self.cache / 'cache.json').read_bytes(), before)
+        self.manifest.write_bytes(original)
+        build = workspace.build_workspace
+        def changed_build(*args, **kwargs):
+            result = build(*args, **kwargs)
+            self.manifest.write_text('{"schemaVersion":1,"resources":[{"id":"new","kind":"skill"}]}', encoding='utf-8')
+            return result
+        self.skill.write_text('---\nname: Changed\n---', encoding='utf-8')
+        with patch.object(workspace, 'build_workspace', changed_build), self.assertRaisesRegex(ValueError, 'inputs changed'):
+            self.refresh()
+        self.assertEqual((self.cache / 'cache.json').read_bytes(), before)
+
+    def test_browser_open_failure_is_not_success(self):
+        argv = ['build_workspace.py', '--refresh', '--manifest', str(self.manifest),
+                '--skill-root', str(self.skills), '--output', str(self.cache), '--open']
+        with patch.object(sys, 'argv', argv), patch('webbrowser.open', return_value=False), redirect_stdout(io.StringIO()):
+            self.assertEqual(workspace.main(), 1)
+
+    def test_failed_cache_publish_keeps_previous_pointer_and_old_page(self):
+        first = self.refresh()
+        state = (self.cache / 'cache.json').read_bytes()
+        page = Path(first['output']).read_bytes()
+        self.skill.write_text('---\nname: Changed\n---', encoding='utf-8')
+        with patch.object(workspace, 'atomic', side_effect=OSError('fixture disk full')):
+            result = self.refresh()
+        self.assertEqual((result['status'], result['output']), ('stale-cache', first['output']))
+        self.assertEqual((self.cache / 'cache.json').read_bytes(), state)
+        self.assertEqual(Path(first['output']).read_bytes(), page)
+        self.assertEqual(self.refresh()['status'], 'updated')
+
+    def test_process_exit_during_first_atomic_write_recovers_without_removing_debris(self):
+        script = ('import sys,os;from pathlib import Path;import build_workspace as w\n'
+                  'def interrupted(p,b):\n (p.parent/"tmp-interrupted").write_bytes(b)\n os._exit(99)\n'
+                  'w.atomic=interrupted\nw.refresh_workspace(Path(sys.argv[1]),Path(sys.argv[2]),[Path(sys.argv[3])])')
+        child = subprocess.run([sys.executable, '-B', '-c', script, str(self.manifest), str(self.cache), str(self.skills)],
+                               cwd=Path(workspace.__file__).parent, capture_output=True, timeout=10)
+        self.assertEqual(child.returncode, 99)
+        self.assertFalse((self.cache / 'cache.json').exists())
+        debris = (self.cache / 'tmp-interrupted').read_bytes()
+        self.assertEqual(self.refresh()['status'], 'updated')
+        self.assertEqual((self.cache / 'tmp-interrupted').read_bytes(), debris)
+
+    def test_corrupt_cache_or_invalid_collection_never_opens_as_success(self):
+        self.refresh()
+        state = (self.cache / 'cache.json').read_bytes()
+        for bad in ('not json', '{"schemaVersion":99}', '{"schemaVersion":1,"cacheType":"local-workspace","generation":"../escape"}'):
+            with self.subTest(bad=bad):
+                (self.cache / 'cache.json').write_text(bad, encoding='utf-8')
+                with self.assertRaises(ValueError):
+                    self.refresh()
+        (self.cache / 'cache.json').write_bytes(state)
+        self.manifest.write_text('{"schemaVersion":1,"resources":"invalid"}', encoding='utf-8')
+        with self.assertRaises(ValueError):
+            self.refresh()
+        self.assertEqual((self.cache / 'cache.json').read_bytes(), state)
 
 
 if __name__ == '__main__':
