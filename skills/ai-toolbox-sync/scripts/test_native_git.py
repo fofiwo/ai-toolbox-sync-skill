@@ -212,6 +212,7 @@ class NativeGitTests(unittest.TestCase):
         self.git(self.repo, 'config', 'core.autocrlf', 'true')
         for directory in (self.source, self.installed):
             (directory / 'entry[1].txt').write_bytes(b'new\r\nsecond\n')
+            (directory / 'new.txt').write_bytes(b'new file\r\n')
         result = self.sync()
         self.assertEqual(result['status'], 'synced')
         self.assertEqual(self.sync()['head'], result['head'])
