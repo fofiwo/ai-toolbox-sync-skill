@@ -398,6 +398,8 @@ def operate(path, request):
     current_identity, current_resources = load_binding(path, state["bindingPath"])
     if current_identity != state["session"]["identity"] or current_resources != state["session"]["resources"]:
         raise ValueError("Binding changed; release and inspect again")
+    if operation == 'check':
+        return {'checked': True}
     if operation == "mark-dirty":
         resource_id = request["resourceId"]
         if resource_id not in state["session"]["resources"]:
@@ -461,7 +463,7 @@ def collection_path(name):
 
 
 def collection_git(repo, *args, input=None, env=None, accepted=(0,)):
-    settings = dict(os.environ, GIT_TERMINAL_PROMPT='0', GCM_INTERACTIVE='Never')
+    settings = dict(os.environ, GIT_TERMINAL_PROMPT='0', GCM_INTERACTIVE='Never', GIT_OPTIONAL_LOCKS='0')
     settings.update(env or {})
     hooks = Path(repo) / '.git' / 'toolbox-no-hooks'
     if hooks.exists():
@@ -530,6 +532,8 @@ def collection_manifest(raw):
     export(value)
     identities, paths = set(), []
     for item in value['resources']:
+        if item['kind'] == 'agent-document':
+            raise ValueError('Agent documents use agent_documents.py and the legacy document transaction, not directory sync')
         identity = (item['kind'], item.get('sourceIdentity'))
         if not identity[1] or identity in identities:
             raise ValueError('Missing or duplicate stable source identity')
@@ -618,6 +622,8 @@ def collection_status(binding_path):
     binding_path, journal = locate_binding(binding_path)
     identity, resources = load_binding(journal, binding_path)
     repo, remote, branch = identity
+    if any(r.get('kind') == 'agent-document' for r in resources.values()):
+        raise ValueError('Agent documents use agent_documents.py and the legacy document transaction, not directory sync')
     if '://' in remote:
         from urllib.parse import urlsplit
         url = urlsplit(remote)
@@ -628,7 +634,10 @@ def collection_status(binding_path):
         urls = collection_git(repo, 'remote', 'get-url', *flags, 'origin').stdout.decode().splitlines()
         if len(urls) != 1 or urls[0].removesuffix('.git') != remote.removesuffix('.git'):
             raise ValueError('Read/push URLs differ from the approved binding')
-    manifest = collection_manifest((Path(repo) / 'toolbox.json').read_bytes())
+    manifest_path = Path(repo) / 'toolbox.json'
+    if any(linked(p) for p in (manifest_path, *manifest_path.parents)) or not manifest_path.is_file():
+        raise ValueError('Expected regular collection manifest without redirected paths')
+    manifest = collection_manifest(manifest_path.read_bytes())
     managed = {item['id']: item for item in manifest['resources']}
     state = json.loads(journal.read_text(encoding='utf-8')) if journal.exists() else {}
     result = dict(binding=str(binding_path), journal=str(journal), repo=repo, remote=remote, branch=branch,
@@ -758,9 +767,15 @@ def collection_plan(status, remote_tip, extra_paths=(), allow_delete=(), allow_r
 def collection_sync(binding_path=None, *, dry_run=False, extra_paths=(), allow_delete=(), allow_remove=(), owner=None):
     owner = owner or 'collection-sync-' + uuid.uuid4().hex
     binding_path, journal = locate_binding(binding_path)
+    binding_bytes = binding_path.read_bytes()
     begin = operate(journal, dict(operation='begin', owner=owner, binding=str(binding_path)))
     run_path = None
     try:
+        def bound():
+            if linked(binding_path) or binding_path.read_bytes() != binding_bytes:
+                raise ValueError('Binding authorization changed; stop before further writes')
+            operate(journal, dict(operation='check', owner=owner))
+        bound()
         if begin['pending']:
             raise ValueError('Reconcile the existing Git intent before collection sync')
         status = collection_status(binding_path)
@@ -769,8 +784,11 @@ def collection_sync(binding_path=None, *, dry_run=False, extra_paths=(), allow_d
             raise ValueError('Binding does not authorize this collection sync')
         if collection_git(repo, 'diff', '--cached', '--name-only').stdout.strip():
             raise ValueError('Existing staged files require separate review')
-        if collection_git(repo, 'ls-files', '--unmerged').stdout.strip() or (Path(repo) / '.git' / 'MERGE_HEAD').exists():
-            raise ValueError('An existing merge must be resolved first')
+        git_dir = Path(collection_git(repo, 'rev-parse', '--absolute-git-dir').stdout.decode().strip())
+        if (collection_git(repo, 'ls-files', '--unmerged').stdout.strip()
+                or any((git_dir / name).exists() for name in ('MERGE_HEAD', 'CHERRY_PICK_HEAD', 'REVERT_HEAD',
+                    'REBASE_HEAD', 'rebase-merge', 'rebase-apply', 'sequencer', 'BISECT_LOG', 'index.lock'))):
+            raise ValueError('An existing Git operation must finish before collection sync')
         def probe():
             lines = collection_network(repo, 'ls-remote', remote, 'refs/heads/' + branch).decode().splitlines()
             matches = [line.split()[0] for line in lines if line.split()[1] == 'refs/heads/' + branch]
@@ -782,6 +800,9 @@ def collection_sync(binding_path=None, *, dry_run=False, extra_paths=(), allow_d
         if probe() != tip:
             raise ValueError('Remote changed during fetch; compare again')
         plan = collection_plan(status, tip, extra_paths, allow_delete, allow_remove)
+        bound()
+        if plan['collect'] and 'collect' not in status['operations']:
+            raise ValueError('Binding does not authorize collect from the installation')
         if dry_run or plan['conflicts']:
             return dict(status='conflict-review' if plan['conflicts'] else 'planned', dryRun=dry_run,
                 head=plan['head'], remoteTip=tip, localChanges=plan['localChanges'],
@@ -799,12 +820,14 @@ def collection_sync(binding_path=None, *, dry_run=False, extra_paths=(), allow_d
             atomic_json(run_path, receipt)
         save('prepared')
         for entry in plan['collect']:
+            bound()
             apply(entry['plan'], run_dir / (uuid.uuid4().hex + '.json'), run_dir / uuid.uuid4().hex,
                   allow_delete=all(Path(entry['plan']['target']).resolve().relative_to(repo).as_posix() + '/' + c['path'] in allow_delete
                                    for c in entry['plan']['changes'] if c['after'] is None))
         checked = collection_plan(collection_status(binding_path), tip, extra_paths, allow_delete, allow_remove)
         if checked['localTree'] != plan['localTree'] or checked['mergedTree'] != plan['mergedTree']:
             raise ValueError('Files changed after planning; nothing committed')
+        bound()
         if plan['localTree'] != collection_git(repo, 'rev-parse', 'HEAD^{tree}').stdout.decode().strip():
             names = sorted(set(plan['localChanges']) & set(plan['workingHashes']))
             # hash-object 使用规范化规则；显式重规范化避免旧索引 CRLF 启发式产生不同树。
@@ -816,10 +839,12 @@ def collection_sync(binding_path=None, *, dry_run=False, extra_paths=(), allow_d
             if collection_git(repo, 'write-tree').stdout.decode().strip() != plan['localTree']:
                 raise ValueError('Actual index differs from the approved plan')
             save('committing')
+            bound()
             collection_git(repo, 'commit', '-m', 'Sync selected toolbox collection')
         head = collection_git(repo, 'rev-parse', 'HEAD').stdout.decode().strip()
         save('local-saved', head=head)
         if head != tip and collection_git(repo, 'merge-base', head, tip).stdout.decode().strip() != tip:
+            bound()
             save('merging')
             if plan['mergedTree'] == collection_git(repo, 'rev-parse', tip + '^{tree}').stdout.decode().strip():
                 collection_git(repo, '-c', 'merge.autoStash=false', 'merge', '--ff-only', '--no-overwrite-ignore', tip)
@@ -832,6 +857,7 @@ def collection_sync(binding_path=None, *, dry_run=False, extra_paths=(), allow_d
                 collection_git(repo, '--literal-pathspecs', 'add', '--', 'toolbox.json')
                 if collection_git(repo, 'write-tree').stdout.decode().strip() != plan['mergedTree']:
                     raise ValueError('Merge result differs from the reviewed tree')
+                bound()
                 collection_git(repo, 'commit', '--no-edit')
         head = collection_git(repo, 'rev-parse', 'HEAD').stdout.decode().strip()
         if collection_git(repo, 'rev-parse', 'HEAD^{tree}').stdout.decode().strip() != plan['mergedTree']:
@@ -851,6 +877,7 @@ def collection_sync(binding_path=None, *, dry_run=False, extra_paths=(), allow_d
         if probe() != tip:
             save('remote-advanced', head=head)
             return dict(status='remote-advanced', head=head, receipt=str(run_path), retry='sync again to compare and merge; local commits retained')
+        bound()
         save('push-pending', head=head, remoteTip=tip)
         if head != tip:
             collection_network(repo, 'push', '--', remote, head + ':refs/heads/' + branch)

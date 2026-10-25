@@ -2,7 +2,7 @@
 
 ## 收藏同步执行入口
 
-已明确同步收藏时，优先使用下列入口；不再让 AI 逐个拼接 observe/intent/Git/resolve。下文低层 API 保留给历史事务恢复、编辑登记与独立安装应用，不能覆盖本节已授权兼容合并的规则。
+已明确同步目录类自建资源与第三方来源索引时，优先使用下列入口；不再让 AI 逐个拼接 observe/intent/Git/resolve。清单或绑定包含 Agent 文档时，继续使用 `agent_documents.py` 与下文既有全文事务；单文件快照、派生身份和正文摘要不套用目录协议。下文低层 API 也保留给历史事务恢复、编辑登记与独立安装应用，不能覆盖本节已授权兼容合并的规则。
 
 ```powershell
 python -B <Skill>/scripts/sync_session.py status --binding <本机绑定.json>
@@ -17,6 +17,8 @@ python -B <Skill>/scripts/sync_session.py sync --binding <本机绑定.json>
 清单按稳定 id 做三方合并；不同资源的新增、不同字段的兼容修改可继续，同一字段冲突、修改与删除冲突、kind/sourceIdentity/ownership/contentPath/parentId 变化停止。源文件由 Git 合并，不以“同文件双边变化”直接判冲突。检查 Git 合并后的清单、身份、路径、文件摘要和提交树；相关功能测试仍由 AI 按影响执行，不声称 Git 无文本冲突等于功能正确。
 
 默认范围为已绑定资源源码、toolbox.json 和 README.md。确有本次授权的额外管理文件，通过 `--paths <精确文件...>` 指定；每一文件删除用 `--allow-delete <精确文件...>`，每一资源取消收藏用 `--allow-remove <稳定id...>` 单列批准。不使用目录、通配符或 force 绕过范围检查。已有非空暂存区、旧未完 Git 意图、未知安装漂移、链接、敏感文件或自定义过滤器/合并驱动停止并保留。执行器不执行仓库 hook、自动 stash 或强推。
+
+`status` 禁止 Git 可选索引刷新，保持索引字节不变。执行前同时检查真实 Git 目录中的 merge、rebase、cherry-pick、revert、sequencer、bisect 和索引锁。自动收集另需 `collect` 授权；每次写入及最终推送前用只读的低层 `check` 操作复核本事务锁和绑定，并比较完整绑定字节，授权撤销或映射变化即停止。检查不提供对不遵守锁的外部写者的原子隔离。
 
 远端检查前配置当前操作所需的授权凭证助手；已有 gh 登录可使用进程级 Git credential helper，不能读取/输出 token、重设全局 Git 配置或自动登录。网络失败只按宿主规则切换一次连接，认证/权限失败不当作网络错误重试。
 

@@ -425,6 +425,72 @@ class NativeGitTests(unittest.TestCase):
             session.collection_network(self.repo, 'ls-remote', 'https://example.invalid/repo', 'refs/heads/main')
         self.assertEqual(len(attempts), 1)
 
+    def test_adversarial_active_cherry_pick_stops_before_network(self):
+        marker = self.repo / '.git/CHERRY_PICK_HEAD'
+        marker.write_text(self.base + '\n', encoding='ascii')
+        with patch.object(session, 'collection_network', side_effect=AssertionError('unexpected network')):
+            with self.assertRaisesRegex(ValueError, 'Git operation'):
+                self.sync()
+        self.assertEqual(marker.read_text().strip(), self.base)
+        self.assertEqual(self.git(self.repo, 'rev-parse', 'HEAD'), self.base)
+
+    def test_adversarial_revoked_binding_cannot_push_saved_commit(self):
+        for directory in (self.source, self.installed):
+            (directory / 'SKILL.md').write_text('selected update\n', encoding='utf-8')
+        original = session.collection_network
+        probes = []
+        def revoke(repo, *args):
+            if args[0] == 'ls-remote':
+                probes.append(1)
+                if len(probes) == 3:
+                    changed = copy.deepcopy(self.binding)
+                    changed['authorization']['operations'].remove('push')
+                    self.binding_path.write_text(json.dumps(changed), encoding='utf-8')
+            return original(repo, *args)
+        with patch.object(session, 'collection_network', side_effect=revoke), self.assertRaises(ValueError):
+            self.sync()
+        self.assertEqual(self.git(self.remote, 'rev-parse', 'main'), self.base)
+        self.assertNotEqual(self.git(self.repo, 'rev-parse', 'HEAD'), self.base)
+
+    def test_adversarial_collect_requires_its_own_permission(self):
+        self.call('begin', binding=str(self.binding_path))
+        self.call('observe', observation=self.observation([]))
+        self.call('confirm')
+        self.call('release')
+        self.binding['authorization']['operations'].remove('collect')
+        self.binding_path.write_text(json.dumps(self.binding), encoding='utf-8')
+        (self.installed / 'SKILL.md').write_text('installed edit\n', encoding='utf-8')
+        with self.assertRaisesRegex(ValueError, 'collect'):
+            self.sync()
+        self.assertEqual((self.source / 'SKILL.md').read_text(), 'base\n')
+        self.assertEqual(self.git(self.remote, 'rev-parse', 'main'), self.base)
+
+    def test_adversarial_status_preserves_index_bytes(self):
+        index = self.repo / '.git/index'
+        before = index.read_bytes()
+        path = self.source / 'SKILL.md'
+        stat = path.stat()
+        os.utime(path, ns=(stat.st_atime_ns, stat.st_mtime_ns + 2_000_000_000))
+        session.collection_status(self.binding_path)
+        self.assertEqual(index.read_bytes(), before)
+
+    def test_adversarial_manifest_link_is_rejected_before_read(self):
+        original = Path.read_bytes
+        def guarded(path):
+            if path.resolve() == self.manifest.resolve():
+                raise AssertionError('manifest link target was read')
+            return original(path)
+        with patch.object(session, 'linked', side_effect=lambda path: path.resolve() == self.manifest.resolve()), patch.object(Path, 'read_bytes', guarded):
+            with self.assertRaisesRegex(ValueError, 'regular'):
+                session.collection_status(self.binding_path)
+
+    def test_adversarial_document_binding_routes_to_legacy_protocol(self):
+        self.binding['taskSync']['resources'][0]['kind'] = 'agent-document'
+        self.binding_path.write_text(json.dumps(self.binding), encoding='utf-8')
+        with patch.object(session, 'collection_network', side_effect=AssertionError('unexpected network')):
+            with self.assertRaisesRegex(ValueError, 'agent_documents.py'):
+                self.sync()
+
 
 if __name__ == '__main__':
     unittest.main()
